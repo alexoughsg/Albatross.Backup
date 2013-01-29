@@ -175,6 +175,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private VpcProvider vpcElement = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
  
     String _name;
     int _cleanupInterval;
@@ -1001,9 +1002,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         //1) in current release, only vpc provider is supported by Vpc offering
         List<Provider> providers = _ntwkModel.getNtwkOffDistinctProviders(guestNtwkOff.getId());
         for (Provider provider : providers) {
-            if (provider != Provider.VPCVirtualRouter) {
-                throw new InvalidParameterValueException("Only provider of type " + Provider.VPCVirtualRouter.getName() 
-                        + " is supported for network offering that can be used in VPC");
+            if (!supportedProviders.contains(provider) ) {
+                throw new InvalidParameterValueException("Provider of type " + provider.getName() 
+                        + " is not supported for network offerings that can be used in VPC");
             }
         }
         
