@@ -68,7 +68,7 @@ under the License.
             <!-- Select language -->
             <div class="select-language">
               <select name="language">
-                <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
+                <option value=""></option> <!-- when this blank option is selected, browsers default language will be used -->
                 <option value="en"><fmt:message key="label.lang.english"/></option>
                 <option value="ja"><fmt:message key="label.lang.japanese"/></option>
 		<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
@@ -76,6 +76,8 @@ under the License.
                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
                 <option value="pt_BR"><fmt:message key="label.lang.brportugese"/></option>
                 <option value="ko_KR"><fmt:message key="label.lang.korean"/></option>
+                <option value="de_DE"><fmt:message key="label.lang.german"/></option>
+                <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
               </select>
             </div>
           </div>
