@@ -1871,7 +1871,7 @@ class PublicIpRange:
         """Delete VlanIpRange"""
 
         cmd = deleteVlanIpRange.deleteVlanIpRangeCmd()
-        cmd.id = self.id
+        cmd.id = self.vlan.id
         apiclient.deleteVlanIpRange(cmd)
 
     @classmethod
@@ -1882,6 +1882,23 @@ class PublicIpRange:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVlanIpRanges(cmd))
 
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate VLAN IP range"""
+
+        cmd = dedicatePublicIpRange.dedicatePublicIpRangeCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return PublicIpRange(apiclient.dedicatePublicIpRange(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release VLAN IP range"""
+
+        cmd = releasePublicIpRange.releasePublicIpRangeCmd()
+        cmd.id = self.vlan.id
+        return apiclient.releasePublicIpRange(cmd)
 
 class SecondaryStorage:
     """Manage Secondary storage"""
