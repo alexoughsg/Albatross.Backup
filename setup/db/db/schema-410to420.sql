@@ -1109,4 +1109,19 @@ CREATE VIEW `cloud`.`account_view` AS
             and async_job.instance_type = 'Account'
             and async_job.job_status = 0;
 
+
 alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;
+
+CREATE TABLE `cloud`.`account_guest_vlan_map` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(255) UNIQUE,
+  `guest_vlan_range` varchar(255) NOT NULL COMMENT 'dedicated guest vlan range',
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id. foreign key to the the physical network table',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_guest_vlan_map__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_guest_vlan_map__physical_network_id`(`physical_network_id`),
+  CONSTRAINT `fk_account_guest_vlan_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_guest_vlan_map__account_id`(`account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

@@ -197,6 +197,8 @@ public interface ResponseGenerator {
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
 
+    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
+
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
