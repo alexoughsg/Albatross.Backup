@@ -348,6 +348,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;
     }
 
+    @Override
+    public boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
         @Override
     public List<? extends Service> listNetworkServices(String providerName) {
         // TODO Auto-generated method stub

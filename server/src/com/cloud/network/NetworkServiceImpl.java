@@ -2911,6 +2911,28 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE, eventDescription = "releasing" +
+            " dedicated guest vlan range", async = true)
+    @DB
+    public boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId) {
+
+        // Verify dedicated range exists
+        AccountGuestVlanMapVO dedicatedGuestVlan = _accountGuestVlanMapDao.findById(dedicatedGuestVlanRangeId);
+        if (dedicatedGuestVlan == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Dedicated guest vlan with specified id doesn't exist in the system");
+            ex.addProxyObject(dedicatedGuestVlan, dedicatedGuestVlanRangeId, "dedicatedGuestVlanRangeId");
+            throw ex;
+        }
+
+        // Remove dedication for the guest vlan
+        if (_accountGuestVlanMapDao.remove(dedicatedGuestVlanRangeId)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public List<? extends Service> listNetworkServices(String providerName) {
 
         Provider provider = null;

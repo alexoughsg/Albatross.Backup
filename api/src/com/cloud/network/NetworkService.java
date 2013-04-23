@@ -121,6 +121,8 @@ public interface NetworkService {
 
     Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
 
+    boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId);
+
     Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId);
 
 
