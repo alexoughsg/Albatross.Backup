@@ -86,6 +86,7 @@ import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -2832,6 +2833,81 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Please provide valid guest vlan range");
         }
         return tokens;
+    }
+
+    @Override
+    public Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
+        Long id = cmd.getId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
+        String guestVlanRange = cmd.getGuestVlanRange();
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long zoneId = cmd.getZoneId();
+
+        Long accountId = null;
+        if (accountName != null && domainId != null) {
+            if (projectId != null) {
+                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+            }
+            Account account = _accountDao.findActiveAccount(accountName, domainId);
+            if (account == null) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account " + accountName);
+                ex.addProxyObject("domain", domainId, "domainId");
+                throw ex;
+            } else {
+                accountId = account.getId();
+            }
+        }
+
+        // set project information
+        if (projectId != null) {
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by id " + projectId);
+                ex.addProxyObject(project, projectId, "projectId");
+                throw ex;
+            }
+            accountId = project.getProjectAccountId();
+        }
+
+
+        SearchBuilder<AccountGuestVlanMapVO> sb = _accountGuestVlanMapDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("guestVlanRange", sb.entity().getGuestVlanRange(), SearchCriteria.Op.EQ);
+        sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
+
+        if (zoneId != null) {
+            SearchBuilder<PhysicalNetworkVO> physicalnetworkSearch = _physicalNetworkDao.createSearchBuilder();
+            physicalnetworkSearch.and("zoneId", physicalnetworkSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+            sb.join("physicalnetworkSearch", physicalnetworkSearch, sb.entity().getPhysicalNetworkId(), physicalnetworkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<AccountGuestVlanMapVO> sc = sb.create();
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+
+        if (guestVlanRange != null) {
+            sc.setParameters("guestVlanRange", guestVlanRange);
+        }
+
+        if (physicalNetworkId != null) {
+            sc.setParameters("physicalNetworkId", physicalNetworkId);
+        }
+
+        if (zoneId != null) {
+            sc.setJoinParameters("physicalnetworkSearch", "zoneId", zoneId);
+        }
+
+        Filter searchFilter = new Filter(AccountGuestVlanMapVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Pair<List<AccountGuestVlanMapVO>, Integer> result = _accountGuestVlanMapDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends GuestVlan>, Integer>(result.first(), result.second());
     }
 
     @Override

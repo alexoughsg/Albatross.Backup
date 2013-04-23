@@ -28,7 +28,7 @@ import com.cloud.network.GuestVlan;
 @SuppressWarnings("unused")
 public class GuestVlanRangeResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the guest VLAN range")
-    private Long id;
+    private String id;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the guest VLAN range")
     private String accountName;
@@ -48,8 +48,14 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the guest vlan range")
     private String projectName;
 
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network of the guest vlan range")
+    private Long physicalNetworkId;
 
-    public void setId(Long id) {
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone of the guest vlan range")
+    private Long zoneId;
+
+
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -75,6 +81,14 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
     }
 
 }

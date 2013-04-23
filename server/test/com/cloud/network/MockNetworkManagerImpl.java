@@ -56,6 +56,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -342,6 +343,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
+    public Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+        @Override
     public List<? extends Service> listNetworkServices(String providerName) {
         // TODO Auto-generated method stub
         return null;

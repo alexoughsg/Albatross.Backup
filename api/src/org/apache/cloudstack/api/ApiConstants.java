@@ -222,7 +222,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
-    public static final String VLAN = "vlanrange";
+    public static final String VLAN_RANGE = "vlanrange";
     public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String VM_AVAILABLE = "vmavailable";

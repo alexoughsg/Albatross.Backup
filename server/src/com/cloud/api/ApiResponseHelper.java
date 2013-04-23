@@ -2738,8 +2738,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan vlan) {
         GuestVlanRangeResponse guestVlanRangeResponse = new GuestVlanRangeResponse();
 
-        guestVlanRangeResponse.setId(vlan.getId());
-        // set uuid
+        guestVlanRangeResponse.setId(vlan.getUuid());
         Long accountId= ApiDBUtils.getAccountIdForGuestVlan(vlan.getId());
         Account owner = ApiDBUtils.findAccountById(accountId);
         if (owner != null) {
@@ -2747,6 +2746,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateDomain(guestVlanRangeResponse, owner.getDomainId());
         }
         guestVlanRangeResponse.setGuestVlanRange(vlan.getGuestVlanRange());
+        guestVlanRangeResponse.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
+        PhysicalNetworkVO physicalNetwork = ApiDBUtils.findPhysicalNetworkById(vlan.getPhysicalNetworkId());
+        guestVlanRangeResponse.setZoneId(physicalNetwork.getDataCenterId());
 
         return guestVlanRangeResponse;
     }

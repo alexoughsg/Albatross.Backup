@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
@@ -117,6 +118,8 @@ public interface NetworkService {
     boolean deletePhysicalNetworkTrafficType(Long id);
 
     GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd);
+
+    Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
 
     Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId);
 
