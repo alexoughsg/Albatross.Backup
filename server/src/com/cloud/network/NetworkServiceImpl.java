@@ -2800,23 +2800,28 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
-
+        AccountGuestVlanMapVO accountGuestVlanMapVO;
         if (updatedVlanRange != null) {
             if (guestVlanMapAccountId != vlanOwner.getAccountId()) {
                 throw new InvalidParameterValueException("Vlan range is partially dedicated to another account. Cannot dedicate guest vlan range " + vlan);
             }
-            AccountGuestVlanMapVO accountGuestVlanMapVO = _accountGuestVlanMapDao.findById(guestVlanMapId);
+            accountGuestVlanMapVO = _accountGuestVlanMapDao.findById(guestVlanMapId);
             accountGuestVlanMapVO.setGuestVlanRange(updatedVlanRange);
             _accountGuestVlanMapDao.update(guestVlanMapId, accountGuestVlanMapVO);
-            return accountGuestVlanMapVO;
         } else {
             Transaction txn = Transaction.currentTxn();
-            AccountGuestVlanMapVO accountGuestVlanMapVO = new AccountGuestVlanMapVO(vlanOwner.getAccountId(), physicalNetworkId);
+            accountGuestVlanMapVO = new AccountGuestVlanMapVO(vlanOwner.getAccountId(), physicalNetworkId);
             accountGuestVlanMapVO.setGuestVlanRange(startVlan + "-" +  endVlan);
             _accountGuestVlanMapDao.persist(accountGuestVlanMapVO);
             txn.commit();
-            return accountGuestVlanMapVO;
         }
+        // For every guest vlan set the corresponding account guest vlan map id
+        for (int i = startVlan; i <= endVlan; i++) {
+            List<DataCenterVnetVO> dataCenterVnet = _datacneter_vnet.findVnet(physicalNetwork.getDataCenterId(),((Integer)i).toString());
+            dataCenterVnet.get(0).setAccountGuestVlanMapId(accountGuestVlanMapVO.getId());
+            _datacneter_vnet.update(dataCenterVnet.get(0).getId(), dataCenterVnet.get(0));
+        }
+        return accountGuestVlanMapVO;
     }
 
     private List<Integer> getVlanFromRange(String vlanRange) {

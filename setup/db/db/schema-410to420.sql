@@ -1125,3 +1125,5 @@ CREATE TABLE `cloud`.`account_guest_vlan_map` (
   INDEX `i_account_guest_vlan_map__account_id`(`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_guest_vlan_map_id bigint unsigned;
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_guest_vlan_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_guest_vlan_map_id` (`account_guest_vlan_map_id`) REFERENCES `account_guest_vlan_map` (`id`) ON DELETE CASCADE;
