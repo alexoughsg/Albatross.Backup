@@ -169,6 +169,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
     private String keyPairName;
 
+    @SerializedName(ApiConstants.DISPLAY_VM) @Param(description="an optional field whether to the display the vm to the end user or not.")
+    private Boolean displayVm;
+
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
@@ -187,7 +190,13 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return this.id;
     }
 
+    public Boolean getDisplayVm() {
+        return displayVm;
+    }
 
+    public void setDisplayVm(Boolean displayVm) {
+        this.displayVm = displayVm;
+    }
 
     @Override
     public String getObjectId() {

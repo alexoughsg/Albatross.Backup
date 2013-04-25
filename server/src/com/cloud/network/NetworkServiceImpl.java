@@ -36,16 +36,14 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.dao.*;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.*;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.bouncycastle.util.IPAddress;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -70,7 +68,6 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.*;
-import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress.State;
 import com.cloud.vm.Nic;
@@ -113,19 +110,13 @@ import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.*;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.NicSecondaryIpVO;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
+
 import java.util.*;
 
 /**
@@ -224,6 +215,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     HostDao _hostDao;
     @Inject
     HostPodDao _hostPodDao;
+    @Inject
+    NicDetailDao _nicDetailDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -810,6 +803,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
+        Boolean isDisplayNetworkEnabled = cmd.getDisplayNetwork();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1091,13 +1085,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
             }
             network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
-                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, caller);
+                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, caller, isDisplayNetworkEnabled);
         } else {
             if (_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
             }
             network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
-            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr);
+            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled);
         }  
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
@@ -1703,8 +1697,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
+    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
+                                      User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -1740,6 +1734,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (displayText != null) {
             network.setDisplayText(displayText);
+        }
+
+        if(displayNetwork != null){
+            network.setDisplayNetwork(displayNetwork);
         }
 
         // network offering and domain suffix can be updated for Isolated networks only in 3.0
@@ -1883,7 +1881,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                             throw new InvalidParameterValueException("Active IPs like " + nic.getIp4Address() + " exist outside the Guest VM CIDR. Cannot apply reservation ");
                             }
                         }
-                    }
+                }
 
                 // When reservation is applied for the first time, network_cidr will be null
                 // Populate it with the actual network cidr
@@ -3201,7 +3199,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (privateNetwork == null) {
             //create Guest network
             privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan, 
-                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null);
+                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null, true);
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
@@ -3261,4 +3259,57 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _accountMgr.checkAccess(caller, null, true, userVm);
         return _networkMgr.listVmNics(vmId, nicId);
     }
+
+    @Override
+    public void addNicDetail(AddNicDetailCmd cmd){
+        UserContext.current().setEventDetails("Nic Id: "+cmd.getId());
+        Account caller = UserContext.current().getCaller();
+        Long nicId = cmd.getId();
+        String name = cmd.getName();
+        String value = cmd.getValue();
+
+        NicVO nic = _nicDao.findById(nicId);
+
+        //_accountMgr.checkAccess(caller, null, true, nic);
+        NicDetailVO nicDetail = new NicDetailVO(nicId, name, value);
+        _nicDetailDao.persist(nicDetail);
+    }
+
+    @Override
+    public void updateNicDetail(UpdateNicDetailCmd cmd){
+        UserContext.current().setEventDetails("Nic Id: "+cmd.getId());
+        Account caller = UserContext.current().getCaller();
+        Long nicId = cmd.getId();
+        String name = cmd.getName();
+        String value = cmd.getValue();
+
+        NicVO nic = _nicDao.findById(nicId);
+       // _accountMgr.checkAccess(caller, null, true, nic);
+        NicDetailVO nicDetail = _nicDetailDao.findDetail(nicId, name);
+        if(nicDetail != null){
+            nicDetail.setValue(value);
+            _nicDetailDao.update(nicDetail.getId(), nicDetail);
+        }else{
+            throw new InvalidParameterValueException("This detail doesnt exist for the nic");
+        }
+
+    }
+
+    @Override
+    public void removeNicDetail(RemoveNicDetailCmd cmd){
+        Account caller = UserContext.current().getCaller();
+        Long nicId = cmd.getId();
+        String name = cmd.getName();
+
+        NicVO nic = _nicDao.findById(nicId);
+        //_accountMgr.checkAccess(caller, null, true, nic);
+        NicDetailVO nicDetail = _nicDetailDao.findDetail(nicId, name);
+        if(nicDetail != null){
+            _nicDetailDao.remove(nicDetail.getId());
+        }else{
+            throw new InvalidParameterValueException("This detail doesnt exist for the nic ");
+        }
+
+    }
+
 }

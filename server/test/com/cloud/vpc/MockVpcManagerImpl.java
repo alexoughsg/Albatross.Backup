@@ -53,7 +53,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vpc.dao.MockVpcDaoImpl;
@@ -390,7 +389,7 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
      */
     @Override
     public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                         long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller, Boolean displayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -459,8 +458,8 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     }
 
 	@Override
-	public Network updateVpcGuestNetwork(long networkId, String name,  String displayText, Account callerAccount, User callerUser,
-			String domainSuffix, Long ntwkOffId, Boolean changeCidr,	String guestVmCidr) {
+	public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser,
+                                         String domainSuffix, Long ntwkOffId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
 		// TODO Auto-generated method stub
 		return null;
 	}

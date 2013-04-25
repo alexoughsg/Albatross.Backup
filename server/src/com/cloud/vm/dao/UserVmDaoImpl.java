@@ -224,10 +224,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData) {
+    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, boolean isDisplayVmEnabled) {
         UserVmVO vo = createForUpdate();
         vo.setDisplayName(displayName);
         vo.setHaEnabled(enable);
+        vo.setDisplayVm(isDisplayVmEnabled);
         vo.setGuestOSId(osTypeId);
         vo.setUserData(userData);
         update(id, vo);

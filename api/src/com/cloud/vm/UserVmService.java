@@ -165,6 +165,8 @@ public interface UserVmService {
      *            TODO
      * @param defaultIp
      *            TODO
+     * @param displayVm
+     *            - Boolean flag whether to the display the vm to the end user or not
      * @param accountName
      *            - an optional account for the virtual machine. Must be used with domainId
      * @param domainId
@@ -181,7 +183,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, String keyboard)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm , String keyboard)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -230,6 +232,8 @@ public interface UserVmService {
      *            TODO
      * @param defaultIps
      *            TODO
+     * @param displayVm
+     *            - Boolean flag whether to the display the vm to the end user or not
      * @param accountName
      *            - an optional account for the virtual machine. Must be used with domainId
      * @param domainId
@@ -247,7 +251,7 @@ public interface UserVmService {
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList,
             Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-            IpAddresses defaultIps, String keyboard)
+            IpAddresses defaultIps, Boolean displayVm, String keyboard)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -293,6 +297,8 @@ public interface UserVmService {
      * @param requestedIps
      *            TODO
      * @param defaultIps TODO
+     * @param displayVm
+     *            - Boolean flag whether to the display the vm to the end user or not
      * @param accountName
      *            - an optional account for the virtual machine. Must be used with domainId
      * @param domainId
@@ -309,7 +315,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**

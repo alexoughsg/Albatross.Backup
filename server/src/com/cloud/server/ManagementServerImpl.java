@@ -2184,6 +2184,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(AddVolumeDetailCmd.class);
+        cmdList.add(UpdateVolumeDetailCmd.class);
+        cmdList.add(RemoveVolumeDetailCmd.class);
+        cmdList.add(ListVolumeDetailsCmd.class);
+        cmdList.add(AddNicDetailCmd.class);
+        cmdList.add(UpdateNicDetailCmd.class);
+        cmdList.add(RemoveNicDetailCmd.class);
         return cmdList;
     }
 

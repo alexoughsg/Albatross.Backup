@@ -104,7 +104,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -1934,9 +1933,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
     
     @DB
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway,
+                                         String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+                                         PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller, Boolean isDisplayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         Vpc vpc = getActiveVpc(vpcId);
@@ -1961,7 +1960,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
 
         //2) Create network
         Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled);
 
         return guestNetwork;
     }
@@ -2023,8 +2022,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
 
 
     @Override
-    public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
-            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr, String guestVmCidr) {
+    public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
+                                         User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
         NetworkVO network = _ntwkDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Couldn't find network by id");
@@ -2036,7 +2035,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
         }
         
         return _ntwkSvc.updateGuestNetwork(networkId, name, displayText, callerAccount, callerUser, domainSuffix,
-                ntwkOffId, changeCidr, guestVmCidr);
+                ntwkOffId, changeCidr, guestVmCidr, displayNetwork);
     }
 
     @Override
