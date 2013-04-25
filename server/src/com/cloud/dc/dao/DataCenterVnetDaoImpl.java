@@ -20,8 +20,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import com.cloud.exception.InvalidParameterValueException;
 import org.springframework.stereotype.Component;
@@ -58,6 +60,10 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     private final GenericSearchBuilder<DataCenterVnetVO, Integer> countZoneVlans;
     private final GenericSearchBuilder<DataCenterVnetVO, Integer> countAllocatedZoneVlans;
     private final SearchBuilder<DataCenterVnetVO> SearchRange;
+    private final GenericSearchBuilder<DataCenterVnetVO, Integer> countVnetsAllocatedToAccount;
+
+    protected GenericSearchBuilder<DataCenterVnetVO, Integer> countVnetsDedicatedToAccount;
+    protected SearchBuilder<AccountGuestVlanMapVO> AccountGuestVlanMapSearch;
 
     @Inject protected AccountGuestVlanMapDao _accountGuestVlanMapDao;
     
@@ -194,6 +200,40 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         update(vo.getId(), vo);
     }
 
+    @Override
+    public int countVnetsAllocatedToAccount(long dcId, long accountId) {
+        SearchCriteria<Integer> sc = countVnetsAllocatedToAccount.create();
+        sc.setParameters("dc", dcId);
+        sc.setParameters("accountId", accountId);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public int countVnetsDedicatedToAccount(long dcId, long accountId) {
+        SearchCriteria<Integer> sc = countVnetsDedicatedToAccount.create();
+        sc.setParameters("dc", dcId);
+        sc.setParameters("accountId", accountId);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        boolean result = super.configure(name, params);
+
+        countVnetsDedicatedToAccount = createSearchBuilder(Integer.class);
+        countVnetsDedicatedToAccount.and("dc", countVnetsDedicatedToAccount.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        countVnetsDedicatedToAccount.and("accountGuestVlanMapId", countVnetsDedicatedToAccount.entity().getAccountGuestVlanMapId(), Op.NNULL);
+        AccountGuestVlanMapSearch = _accountGuestVlanMapDao.createSearchBuilder();
+        AccountGuestVlanMapSearch.and("accountId", AccountGuestVlanMapSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        countVnetsDedicatedToAccount.join("AccountGuestVlanMapSearch", AccountGuestVlanMapSearch, countVnetsDedicatedToAccount.entity().getAccountGuestVlanMapId(),
+                AccountGuestVlanMapSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        countVnetsDedicatedToAccount.select(null, Func.COUNT, countVnetsDedicatedToAccount.entity().getId());
+        countVnetsDedicatedToAccount.done();
+        AccountGuestVlanMapSearch.done();
+
+        return result;
+    }
+
     public DataCenterVnetDaoImpl() {
     	super();
         DcSearchAllocated = createSearchBuilder();
@@ -253,6 +293,11 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         VnetDcSearchAllocated.and("account", VnetDcSearchAllocated.entity().getAccountId(), SearchCriteria.Op.EQ);
         VnetDcSearchAllocated.and("reservation", VnetDcSearchAllocated.entity().getReservationId(), SearchCriteria.Op.EQ);
         VnetDcSearchAllocated.done();
-        
+
+        countVnetsAllocatedToAccount = createSearchBuilder(Integer.class);
+        countVnetsAllocatedToAccount.and("dc", countVnetsAllocatedToAccount.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        countVnetsAllocatedToAccount.and("accountId", countVnetsAllocatedToAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        countVnetsAllocatedToAccount.select(null, Func.COUNT, countVnetsAllocatedToAccount.entity().getId());
+        countVnetsAllocatedToAccount.done();
     }
 }
