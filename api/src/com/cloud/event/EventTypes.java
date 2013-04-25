@@ -391,7 +391,8 @@ public class EventTypes {
     public static final String EVENT_VM_AFFINITY_GROUP_UPDATE = "VM.AG.UPDATE";
 
     // Dedicated guest vlan range
-    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "DEDICATED.GUESTVLANRANGE.RELEASE";
+    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
+    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
 
     static {
 

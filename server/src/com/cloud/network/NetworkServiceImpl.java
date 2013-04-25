@@ -2705,7 +2705,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @DB
-    // Generate action events
+    @ActionEvent(eventType = EventTypes.EVENT_DEDICATED_GUEST_VLAN_RANGE_DEDICATE, eventDescription = "dedicating guest vlan range", async = false)
     public GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd) {
         String vlan = cmd.getVlan();
         String accountName = cmd.getAccountName();

@@ -57,7 +57,7 @@ public class DataCenterVnetVO implements InternalIdentity {
     @Column(name="reservation_id")
     protected String reservationId;
 
-    @Column(name="account_guest_vlan_map_id")
+    @Column(name="account_vnet_map_id")
     protected Long accountGuestVlanMapId;
     
     public Date getTakenAt() {

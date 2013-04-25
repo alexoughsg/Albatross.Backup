@@ -59,6 +59,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.AccountGuestVlanMapDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -156,7 +157,8 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         LoadBalancerDaoImpl.class,
         NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class,
-        StoragePoolDetailsDaoImpl.class
+        StoragePoolDetailsDaoImpl.class,
+        AccountGuestVlanMapDaoImpl.class
     },
 includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
 useDefaultFilters=false
