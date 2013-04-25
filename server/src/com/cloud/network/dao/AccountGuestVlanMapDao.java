@@ -29,4 +29,6 @@ public interface AccountGuestVlanMapDao extends GenericDao<AccountGuestVlanMapVO
 
     public List<AccountGuestVlanMapVO> listAccountGuestVlanMapsByPhysicalNetwork(long physicalNetworkId);
 
+    public int removeByAccountId(long accountId);
+
 }

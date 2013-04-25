@@ -58,6 +58,13 @@ public class AccountGuestVlanMapDaoImpl extends GenericDaoBase<AccountGuestVlanM
         return listIncludingRemovedBy(sc);
     }
 
+    @Override
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<AccountGuestVlanMapVO> sc = AccountSearch.create();
+        sc.setParameters("accountId", accountId);
+        return expunge(sc);
+    }
+
     public AccountGuestVlanMapDaoImpl() {
         super();
         AccountSearch = createSearchBuilder();

@@ -2523,6 +2523,19 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             txn.close();
             throw new InvalidParameterValueException("Some of the vnets from this range are allocated, can only remove a range which has no allocated vnets");
         }
+        // If the range is partially dedicated to an account fail the request
+        List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(network.getId());
+        for (AccountGuestVlanMapVO map : maps) {
+            String[] vlans = map.getGuestVlanRange().split("-");
+            Integer dedicatedStartVlan = Integer.parseInt(vlans[0]);
+            Integer dedicatedEndVlan = Integer.parseInt(vlans[1]);
+            if ((start <= dedicatedStartVlan && end >= dedicatedStartVlan) || (start <= dedicatedEndVlan && end >= dedicatedEndVlan)) {
+                txn.close();
+                throw new InvalidParameterValueException("Vnet range " + map.getGuestVlanRange() + " is dedicated" +
+                        " to an account. The specified range " + start + "-" + end + " overlaps with the dedicated range " +
+                        " Please release the overlapping dedicated range before deleting the range");
+            }
+        }
         for (i=0; i<existingRanges.size(); i++){
             if (existingRanges.get(i).first()<= start & existingRanges.get(i).second()>= end){
                 temp = existingRanges.get(i).second();
@@ -2553,6 +2566,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _physicalNetworkDao.update(network.getId(), network);
         txn.commit();
         _physicalNetworkDao.releaseFromLockTable(network.getId());
+
         return  true;
     }
 
@@ -2930,6 +2944,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Remove dedication for the guest vlan
+         _datacneter_vnet.releaseDedicatedGuestVlans(dedicatedGuestVlan.getId());
         if (_accountGuestVlanMapDao.remove(dedicatedGuestVlanRangeId)) {
             return true;
         } else {
