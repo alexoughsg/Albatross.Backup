@@ -138,39 +138,34 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         
         Map<NfsSecondaryStorageResource, Map<String, String>> srs = new HashMap<NfsSecondaryStorageResource, Map<String, String>>();
         
-        NfsSecondaryStorageResource storage;
-        if(_configDao.isPremium()) {
-            Class<?> impl;
-            String name = "com.cloud.storage.resource.PremiumSecondaryStorageResource";
-            try {
-                impl = Class.forName(name);
-                final Constructor<?> constructor = impl.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                storage = (NfsSecondaryStorageResource)constructor.newInstance();
-            } catch (final ClassNotFoundException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to ClassNotFoundException");
-            	return null;
-            } catch (final SecurityException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to SecurityException");
-            	return null;
-            } catch (final NoSuchMethodException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to NoSuchMethodException");
-            	return null;
-            } catch (final IllegalArgumentException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalArgumentException");
-            	return null;
-            } catch (final InstantiationException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InstantiationException");
-            	return null;
-            } catch (final IllegalAccessException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalAccessException");
-            	return null;
-            } catch (final InvocationTargetException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InvocationTargetException");
-            	return null;
+        NfsSecondaryStorageResource storage = null;
+
+        Class<?> impl;
+        String name = "com.cloud.storage.resource.VmwareSecondaryStorageResource";
+        try {
+            impl = Class.forName(name);
+            final Constructor<?> constructor = impl.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            storage = (NfsSecondaryStorageResource)constructor.newInstance();
+        } catch (final ClassNotFoundException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to ClassNotFoundException");
+        } catch (final SecurityException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to SecurityException");
+        } catch (final NoSuchMethodException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to NoSuchMethodException");
+        } catch (final IllegalArgumentException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to IllegalArgumentException");
+        } catch (final InstantiationException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to InstantiationException");
+        } catch (final IllegalAccessException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to IllegalAccessException");
+        } catch (final InvocationTargetException e) {
+        	s_logger.error("Unable to load com.cloud.storage.resource.VmwareSecondaryStorageResource due to InvocationTargetException");
+        } finally {
+            if (storage == null) {
+                s_logger.debug("Enable to load the VmwareSecondaryStorageResource, falling back to NfsSecondaryStorageResource");
+                storage = new NfsSecondaryStorageResource();
             }
-        } else {
-        	storage = new NfsSecondaryStorageResource();
         }
         
         Map<String, String> details = new HashMap<String, String>();

@@ -251,6 +251,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
             _properties.put(entry.getKey(), entry.getValue());
         }
 
+        // FIXME Premium reference
         String value = (String) params.get("premium");
         if (value != null && value.equals("premium"))
             _proxyPort = 443;

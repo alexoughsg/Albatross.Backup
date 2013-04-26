@@ -166,11 +166,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         s_logger.info("Configure VmwareManagerImpl, manager name: " + name);
 
-        if(!_configDao.isPremium()) {
-            s_logger.error("Vmware component can only run under premium distribution");
-            throw new ConfigurationException("Vmware component can only run under premium distribution");
-        }
-
         _instance = _configDao.getValue(Config.InstanceName.key());
         if (_instance == null) {
             _instance = "DEFAULT";

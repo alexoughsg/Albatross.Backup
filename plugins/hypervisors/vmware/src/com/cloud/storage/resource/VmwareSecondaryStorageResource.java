@@ -29,9 +29,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.Hypervisor;
 
-public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource {
+public class VmwareSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageResource.class);
+    private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResource.class);
 
     private Map<Hypervisor.HypervisorType, SecondaryStorageResourceHandler> _handlers = new HashMap<Hypervisor.HypervisorType, SecondaryStorageResourceHandler>();
     

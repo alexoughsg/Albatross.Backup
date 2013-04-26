@@ -81,15 +81,6 @@ public class MockConfigurationDaoImpl  extends GenericDaoBase<ConfigurationVO, S
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.dao.ConfigurationDao#isPremium()
-     */
-    @Override
-    public boolean isPremium() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.dao.ConfigurationDao#findByName(java.lang.String)
      */
     @Override

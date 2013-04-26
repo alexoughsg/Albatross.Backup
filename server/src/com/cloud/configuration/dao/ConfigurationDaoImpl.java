@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationDaoImpl.class);
     private Map<String, String> _configs = null;
-    private boolean _premium;
 
     final SearchBuilder<ConfigurationVO> InstanceSearch;
     final SearchBuilder<ConfigurationVO> NameSearch;
@@ -60,11 +59,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
     }
 
-    @Override
-    public boolean isPremium() {
-        return _premium;
-    }
-    
     @Override
     public void invalidateCache() {
     	_configs = null;
@@ -123,9 +117,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
-
-    	Object premium = params.get("premium");
-        _premium = (premium != null) && ((String) premium).equals("true");
 
         return true;
     }

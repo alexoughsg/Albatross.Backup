@@ -1055,20 +1055,17 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
-        if (_configDao.isPremium()) {
-            if (profile.getHypervisorType() == HypervisorType.Hyperv) {
-            	s_logger.debug("Hyperv hypervisor configured, telling the ssvm to load the CifsSecondaryStorageResource");
-                buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
-            } else if (profile.getHypervisorType() == HypervisorType.VMware) {
-            	s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the PremiumSecondaryStorageResource");
-            	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
-            } else {
-            	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
-                buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
-            }
+        if (profile.getHypervisorType() == HypervisorType.Hyperv) {
+        	s_logger.debug("Hyperv hypervisor configured, telling the ssvm to load the CifsSecondaryStorageResource");
+            buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
+        } else if (profile.getHypervisorType() == HypervisorType.VMware) {
+        	s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the VmwareSecondaryStorageResource");
+        	buf.append(" resource=com.cloud.storage.resource.VmwareSecondaryStorageResource");
         } else {
+        	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
             buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
         }
+
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
         buf.append(" role=").append(profile.getVirtualMachine().getRole().toString());

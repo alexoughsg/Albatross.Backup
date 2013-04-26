@@ -166,9 +166,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // Save default Configuration Table values
             List<String> categories = Config.getCategories();
             for (String category : categories) {
-                // If this is not a premium environment, don't insert premium configuration values
-                if (!_configDao.isPremium() && category.equals("Premium")) {
-                    continue;
+                // TODO This should go once finished with premium cleanup
+                if (category.equals("Premium")) {
+                    s_logger.debug ("Config found with category premium, please fix..");
                 }
 
                 List<Config> configs = Config.getConfigs(category);

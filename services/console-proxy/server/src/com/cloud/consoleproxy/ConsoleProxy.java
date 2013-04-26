@@ -130,6 +130,7 @@ public class ConsoleProxy {
             s_logger.info("Setting httpListenPort=" + s);
         }
         
+        // FIXME Premium reference
         s = conf.getProperty("premium");
         if(s != null && s.equalsIgnoreCase("true")) {
             s_logger.info("Premium setting will override settings from consoleproxy.properties, listen at port 443");

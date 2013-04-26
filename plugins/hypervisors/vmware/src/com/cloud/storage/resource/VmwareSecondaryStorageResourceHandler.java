@@ -48,7 +48,7 @@ import com.vmware.vim25.ManagedObjectReference;
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
 
-    private final PremiumSecondaryStorageResource _resource;
+    private final VmwareSecondaryStorageResource _resource;
     private final VmwareStorageManager _storageMgr;
 
     private final Gson _gson;
@@ -57,7 +57,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 	private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
      */
 
-    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource) {
+    public VmwareSecondaryStorageResourceHandler(VmwareSecondaryStorageResource resource) {
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this);
         _gson = GsonHelper.getGsonLogger();
