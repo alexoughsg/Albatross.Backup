@@ -172,6 +172,7 @@ public class DedicateGuestVlanRangesTest {
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
 
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
+        physicalNetwork.addIsolationMethod("VLAN");
         AccountGuestVlanMapVO accountGuestVlanMapVO = new AccountGuestVlanMapVO(1L,1L);
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
@@ -207,6 +208,7 @@ public class DedicateGuestVlanRangesTest {
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2");
 
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
+        physicalNetwork.addIsolationMethod("VLAN");
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
@@ -227,6 +229,7 @@ public class DedicateGuestVlanRangesTest {
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
         
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "6-10", "200", 1L, null, "testphysicalnetwork");
+        physicalNetwork.addIsolationMethod("VLAN");
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
@@ -247,6 +250,7 @@ public class DedicateGuestVlanRangesTest {
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
 
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
+        physicalNetwork.addIsolationMethod("VLAN");
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
         List<DataCenterVnetVO> dataCenterList = new ArrayList<DataCenterVnetVO>();
@@ -271,7 +275,8 @@ public class DedicateGuestVlanRangesTest {
         dedicateVlanField.setAccessible(true);
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
 
-        PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");;
+        PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
+        physicalNetwork.addIsolationMethod("VLAN");
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
@@ -300,6 +305,7 @@ public class DedicateGuestVlanRangesTest {
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
 
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
+        physicalNetwork.addIsolationMethod("VLAN");
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
