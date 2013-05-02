@@ -2754,6 +2754,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
+        // Verify physical network isolation type is VLAN
+        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (physicalNetwork == null ) {
+            throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
+        } else if (physicalNetwork.getIsolationMethods() == null || !physicalNetwork.getIsolationMethods().contains("VLAN")) {
+            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " +
+                    "Physical isolation type of network " + physicalNetworkId + " is not VLAN");
+        }
+
         // Get the start and end vlan
         String[] vlanRange = vlan.split("-");
         if (vlanRange.length != 2) {
@@ -2769,7 +2778,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Verify guest vlan range exists in the system
-        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         List <Pair <Integer,Integer>> existingRanges = physicalNetwork.getVnet();
         Boolean exists = false;
         if (!existingRanges.isEmpty()) {
