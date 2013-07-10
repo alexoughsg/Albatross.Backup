@@ -925,8 +925,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else {
                     vswitchNw = networks.iterator().next();
                 }
-
-                enableXenServerNetwork(conn, vswitchNw, "vswitch", "vswitch network");
+                if (!is_xcp())
+                	enableXenServerNetwork(conn, vswitchNw, "vswitch", "vswitch network");
                 _host.vswitchNetwork = vswitchNw;
             }
             return _host.vswitchNetwork;
@@ -960,7 +960,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 rec.otherConfig = otherConfig;
                 nw = Network.create(conn, rec);
                 // Plug dom0 vif only when creating network
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
+                if (!is_xcp())
+                	enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
                 s_logger.debug("### Xen Server network for tunnels created:" + nwName);
             } else {
                 nw = networks.iterator().next();
@@ -996,7 +997,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (!configured) {
                 // Plug dom0 vif only if not done before for network and host
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
+            	if (!is_xcp())
+            		enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
                 String result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge,
                         "key", String.valueOf(key),
                         "xs_nw_uuid", nw.getUuid(conn),
@@ -5786,6 +5788,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private OvsFetchInterfaceAnswer execute(OvsFetchInterfaceCommand cmd) {
 
         String label = cmd.getLabel();
+        //FIXME: this is a tricky to pass the network checking in XCP. I temporary get default label from Host.
+        if (is_xcp()) {
+        	label = getLabel();
+        }
         s_logger.debug("Will look for network with name-label:" + label + " on host " + _host.ip);
         Connection conn = getConnection();
         try {
@@ -8598,5 +8604,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public void setRunLevel(int level) {
+    }
+    
+    private boolean is_xcp() {
+    	Connection conn = getConnection();
+    	String result = callHostPlugin(conn, "ovstunnel", "is_xcp");
+    	if (result.equals("XCP"))
+    		return true;
+    	return false;
+    }
+    
+    private String getLabel() {
+    	Connection conn = getConnection();
+    	String result = callHostPlugin(conn, "ovstunnel", "getLabel");
+    	return result;
     }
 }

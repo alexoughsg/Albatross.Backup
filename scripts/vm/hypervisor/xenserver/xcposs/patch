@@ -67,3 +67,7 @@ getDomRVersion.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 router_proxy.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 createipAlias.sh=..,0755,/usr/lib/xcp/bin
 deleteipAlias.sh=..,0755,/usr/lib/xcp/bin
+
+###add cloudstack plugin script for XCP
+cloudstack_plugins.conf=..,0644,/etc/xensource
+cloudstack_pluginlib.py=..,0755,/etc/xapi.d/plugins
