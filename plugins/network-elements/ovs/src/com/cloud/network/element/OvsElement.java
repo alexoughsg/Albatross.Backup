@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.api.response.OvsDeviceResponse;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -32,105 +34,144 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.commands.AddOvsDeviceCmd;
+import com.cloud.network.commands.DeleteOvsDeviceCmd;
+import com.cloud.network.commands.ListOvsDevicesCmd;
 import com.cloud.network.ovs.OvsTunnelManager;
+import com.cloud.network.ovs.dao.OvsDeviceVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.DB;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = {NetworkElement.class})
-public class OvsElement extends AdapterBase implements NetworkElement {
-    @Inject
-    OvsTunnelManager _ovsTunnelMgr;
+@Local(value = { NetworkElement.class })
+public class OvsElement extends AdapterBase implements NetworkElement,
+		OvsElementService {
+	@Inject
+	OvsTunnelManager _ovsTunnelMgr;
 
-    @Override
-    public boolean destroy(Network network, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        return true;
-    }
+	@Override
+	public boolean destroy(Network network, ReservationContext context)
+			throws ConcurrentOperationException, ResourceUnavailableException {
+		return true;
+	}
 
-    @Override
-    public Map<Service, Map<Capability, String>> getCapabilities() {
-        return null;
-    }
+	@Override
+	public Map<Service, Map<Capability, String>> getCapabilities() {
+		return null;
+	}
 
-    @Override
-    public Provider getProvider() {
-        return null;
-    }
+	@Override
+	public Provider getProvider() {
+		return null;
+	}
 
-    @Override
-    public boolean implement(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        //Consider actually implementing the network here
-    	return true;
-    }
+	@Override
+	public boolean implement(Network network, NetworkOffering offering,
+			DeployDestination dest, ReservationContext context)
+			throws ConcurrentOperationException, ResourceUnavailableException,
+			InsufficientCapacityException {
+		// Consider actually implementing the network here
+		return true;
+	}
 
-    @Override
-    public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
-            return true;
-        }
+	@Override
+	public boolean prepare(Network network, NicProfile nic,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			DeployDestination dest, ReservationContext context)
+			throws ConcurrentOperationException, ResourceUnavailableException,
+			InsufficientCapacityException {
+		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
+			return true;
+		}
 
-        if (nic.getTrafficType() != Networks.TrafficType.Guest) {
-            return true;
-        }
+		if (nic.getTrafficType() != Networks.TrafficType.Guest) {
+			return true;
+		}
 
-        _ovsTunnelMgr.VmCheckAndCreateTunnel(vm, network, dest);
-        //_ovsTunnelMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
+		_ovsTunnelMgr.VmCheckAndCreateTunnel(vm, network, dest);
+		// _ovsTunnelMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
-            ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
-        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
-            return true;
-        }
+	@Override
+	public boolean release(Network network, NicProfile nic,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			ReservationContext context) throws ConcurrentOperationException,
+			ResourceUnavailableException {
+		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
+			return true;
+		}
 
-        if (nic.getTrafficType() != Networks.TrafficType.Guest) {
-            return true;
-        }
+		if (nic.getTrafficType() != Networks.TrafficType.Guest) {
+			return true;
+		}
 
-        _ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine(), network);
-        return true;
-    }
+		_ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine(), network);
+		return true;
+	}
 
-    @Override
-    public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        return true;
-    }
+	@Override
+	public boolean shutdown(Network network, ReservationContext context,
+			boolean cleanup) throws ConcurrentOperationException,
+			ResourceUnavailableException {
+		return true;
+	}
 
-    @Override
-    public boolean isReady(PhysicalNetworkServiceProvider provider) {
-    	return true;
-    }
+	@Override
+	public boolean isReady(PhysicalNetworkServiceProvider provider) {
+		return true;
+	}
 
-    @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        return true;
-    }
+	@Override
+	public boolean shutdownProviderInstances(
+			PhysicalNetworkServiceProvider provider, ReservationContext context)
+			throws ConcurrentOperationException, ResourceUnavailableException {
+		return true;
+	}
 
-    @Override
-    public boolean canEnableIndividualServices() {
-        return false;
-    }
+	@Override
+	public boolean canEnableIndividualServices() {
+		return false;
+	}
 
-    @Override
-    public boolean verifyServicesCombination(Set<Service> services) {
-        return true;
-    }
+	@Override
+	public boolean verifyServicesCombination(Set<Service> services) {
+		return true;
+	}
+
+	@Override
+	public List<Class<?>> getCommands() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	@DB
+	public OvsDeviceVO addOvsDevice(AddOvsDeviceCmd cmd) {
+		// TODO
+		return null;
+	}
+
+	@Override
+	public OvsDeviceResponse createOvsDeviceResponse(OvsDeviceVO ovsDeviceVO) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean deleteOvsDevice(DeleteOvsDeviceCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public List<OvsDeviceVO> listOvsDevices(ListOvsDevicesCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
