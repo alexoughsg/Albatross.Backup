@@ -154,7 +154,8 @@ known_categories = {
     'releaseDedicatedHost': 'Dedicate Resources',
     'Baremetal' : 'Baremetal',
     'UCS' : 'UCS',
-    'Ucs' : 'UCS'
+    'Ucs' : 'UCS',
+    'OvsElement' : 'Ovs Element'
     }
 
 
