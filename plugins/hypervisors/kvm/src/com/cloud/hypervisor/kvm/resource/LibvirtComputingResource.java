@@ -63,8 +63,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
@@ -121,6 +121,13 @@ import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.OvsCreateTunnelAnswer;
+import com.cloud.agent.api.OvsCreateTunnelCommand;
+import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsDestroyTunnelCommand;
+import com.cloud.agent.api.OvsFetchInterfaceAnswer;
+import com.cloud.agent.api.OvsFetchInterfaceCommand;
+import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -266,7 +273,7 @@ import com.cloud.vm.VirtualMachineName;
  **/
 @Local(value = { ServerResource.class })
 public class LibvirtComputingResource extends ServerResourceBase implements
-ServerResource {
+		ServerResource {
     private static final Logger s_logger = Logger
             .getLogger(LibvirtComputingResource.class);
 
@@ -282,6 +289,7 @@ ServerResource {
     private String _ovsPvlanDhcpHostPath;
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
+	private String _ovsTunnelPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -289,6 +297,7 @@ ServerResource {
     private int _migrateSpeed;
 
     private long _hvVersion;
+	private long _kernelVersion;
     private KVMHAMonitor _monitor;
     private final String _SSHKEYSPATH = "/root/.ssh";
     private final String _SSHPRVKEYPATH = _SSHKEYSPATH + File.separator
@@ -597,6 +606,11 @@ ServerResource {
                     "Unable to find the security_group.py");
         }
 
+		_ovsTunnelPath = Script.findScript(networkScriptsDir, "ovstunnel.py");
+		if (_ovsTunnelPath == null) {
+			throw new ConfigurationException("Unable to find the ovstunnel.py");
+		}
+
         _routerProxyPath = Script.findScript("scripts/network/domr/",
                 "router_proxy.sh");
         if (_routerProxyPath == null) {
@@ -846,6 +860,11 @@ ServerResource {
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
+		String unameKernelVersion = Script.runSimpleBashScript("uname -r");
+		String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
+		_kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000
+				+ Integer.parseInt(kernelVersions[1]) * 1000
+				+ Integer.parseInt(kernelVersions[2]);
         return true;
     }
 
@@ -1069,7 +1088,7 @@ ServerResource {
         return vnetId;
     }
 
-    private void passCmdLine(String vmName, String cmdLine)
+	private boolean passCmdLine(String vmName, String cmdLine)
             throws InternalErrorException {
         final Script command = new Script(_patchViaSocketPath, _timeout, s_logger);
         String result;
@@ -1077,8 +1096,10 @@ ServerResource {
         command.add("-p", cmdLine.replaceAll(" ", "%"));
         result = command.execute();
         if (result != null) {
-            throw new InternalErrorException(result);
+			s_logger.debug("passcmd failed:" + result);
+			return false;
         }
+		return true;
     }
 
     boolean isDirectAttachedNetwork(String type) {
@@ -1256,7 +1277,17 @@ ServerResource {
                 return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand) cmd);
-            } else {
+			} else if (cmd instanceof OvsFetchInterfaceCommand) {
+				return execute((OvsFetchInterfaceCommand) cmd);
+			} else if (cmd instanceof OvsSetupBridgeCommand) {
+				return execute((OvsSetupBridgeCommand) cmd);
+			} else if (cmd instanceof OvsDestroyBridgeCommand) {
+				return execute((OvsDestroyBridgeCommand) cmd);
+			} else if (cmd instanceof OvsCreateTunnelCommand) {
+				return execute((OvsCreateTunnelCommand) cmd);
+			} else if (cmd instanceof OvsDestroyTunnelCommand) {
+				return execute((OvsDestroyTunnelCommand) cmd);
+			} else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1264,6 +1295,188 @@ ServerResource {
             return new Answer(cmd, false, e.getMessage());
         }
     }
+
+	// Tuna added
+    private OvsFetchInterfaceAnswer execute(OvsFetchInterfaceCommand cmd) {
+    	String label = cmd.getLabel();
+    	s_logger.debug("Will look for network with name-label:" + label);
+    	try {
+    		String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
+    		String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
+    		String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
+			return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + label
+					+ " retrieved successfully", ipadd, mask, mac);
+
+		} catch (Exception e) {
+			s_logger.warn("Caught execption when fetching interface", e);
+			return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:"
+					+ e.getMessage());
+    	}
+
+    }
+
+	private Answer execute(OvsSetupBridgeCommand cmd) {
+		findOrCreateTunnelNetwork(cmd.getKey());
+		configureTunnelNetwork(cmd.getNetworkId(), cmd.getHostId(),
+				cmd.getKey());
+		s_logger.debug("OVS Bridge configured");
+		return new Answer(cmd, true, null);
+	}
+
+	private Answer execute(OvsDestroyBridgeCommand cmd) {
+		destroyTunnelNetwork(cmd.getKey());
+		s_logger.debug("OVS Bridge destroyed");
+		return new Answer(cmd, true, null);
+	}
+
+	private synchronized void destroyTunnelNetwork(int key) {
+		try {
+			findOrCreateTunnelNetwork(key);
+			String bridge = "OVSTunnel" + key;
+			Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
+			cmd.add("destroy_ovs_bridge");
+			cmd.add("--bridge", bridge);
+			String result = cmd.execute();
+			String[] res = result.split(":");
+			if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
+				// TODO: Should make this error not fatal?
+				// Can Concurrent VM shutdown/migration/reboot events can cause
+				// this method
+				// to be executed on a bridge which has already been removed?
+				throw new CloudRuntimeException("Unable to remove OVS bridge "
+						+ bridge + ":" + res);
+			}
+			return;
+		} catch (Exception e) {
+			s_logger.warn("destroyTunnelNetwork failed:", e);
+			return;
+		}
+	}
+
+	private boolean networkExist(String nwName) {
+		Script.runSimpleBashScript("ifconfig " + nwName);
+		String result = Script.runSimpleBashScript("echo $?");
+		return result.equals("0");
+	}
+
+	private synchronized boolean findOrCreateTunnelNetwork(long key) {
+		try {
+			String nwName = "OVSTunnel" + key;
+			if (networkExist(nwName)) {
+				return true;
+			}
+			// if not found, create a new one
+			Map<String, String> otherConfig = new HashMap<String, String>();
+			otherConfig.put("ovs-host-setup", "");
+			Script.runSimpleBashScript("ovs-vsctl -- --may-exist add-br "
+					+ nwName + " -- set bridge " + nwName
+					+ " other_config:ovs_host_setup=\" \"");
+			s_logger.debug("### KVM network for tunnels created:" + nwName);
+		} catch (Exception e) {
+			s_logger.warn("createTunnelNetwork failed", e);
+		}
+		return true;
+	}
+
+	private synchronized boolean configureTunnelNetwork(long networkId,
+			long hostId, int key) {
+		try {
+			findOrCreateTunnelNetwork(key);
+			String nwName = "OVSTunnel" + key;
+			String configuredHosts = Script
+					.runSimpleBashScript("ovs-vsctl get bridge " + nwName
+							+ " other_config:ovs_host_setup");
+			boolean configured = false;
+			if (configuredHosts != null) {
+				String hostIdsStr[] = configuredHosts.split(",");
+				for (String hostIdStr : hostIdsStr) {
+					if (hostIdStr.equals(((Long) hostId).toString())) {
+						configured = true;
+						break;
+					}
+				}
+			}
+			if (!configured) {
+				Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
+				cmd.add("setup_ovs_bridge");
+				cmd.add("--key", String.valueOf(key));
+				cmd.add("--cs_host_id", ((Long) hostId).toString());
+				cmd.add("--bridge", nwName);
+				String result = cmd.execute();
+				String[] res = result.split(":");
+				if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
+					throw new CloudRuntimeException(
+							"Unable to pre-configure OVS bridge " + nwName
+									+ " for network ID:" + networkId + " - "
+									+ res);
+				}
+			}
+		} catch (Exception e) {
+			s_logger.warn("createandConfigureTunnelNetwork failed", e);
+			return false;
+		}
+		return true;
+	}
+
+	private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
+		String bridge = "OVSTunnel" + cmd.getKey();
+		try {
+			if (!findOrCreateTunnelNetwork(cmd.getKey())) {
+				s_logger.debug("Error during bridge setup");
+				return new OvsCreateTunnelAnswer(cmd, false,
+						"Cannot create network", bridge);
+			}
+
+			configureTunnelNetwork(cmd.getNetworkId(), cmd.getFrom(),
+					cmd.getKey());
+			Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
+			command.add("create_tunnel");
+			command.add("--bridge", bridge);
+			command.add("--remote_ip", cmd.getRemoteIp());
+			command.add("--key", cmd.getKey().toString());
+			command.add("--src_host", cmd.getFrom().toString());
+			command.add("--dst_host", cmd.getTo().toString());
+
+			String result = command.execute();
+			String[] res = result.split(":");
+			if (res.length == 2 && res[0].equalsIgnoreCase("SUCCESS")) {
+				return new OvsCreateTunnelAnswer(cmd, true, result, res[1],
+						bridge);
+			} else {
+				return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
+			}
+		} catch (Exception e) {
+			s_logger.debug("Error during tunnel setup");
+			s_logger.warn("Caught execption when creating ovs tunnel", e);
+			return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
+		}
+	}
+
+	private Answer execute(OvsDestroyTunnelCommand cmd) {
+		try {
+			if (!findOrCreateTunnelNetwork(cmd.getKey())) {
+				s_logger.warn("Unable to find tunnel network for GRE key:"
+						+ cmd.getKey());
+				return new Answer(cmd, false, "No network found");
+			}
+
+			String bridge = "OVSTunnel" + cmd.getKey();
+			Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
+			command.add("destroy_tunnel");
+			command.add("--bridge", bridge);
+			command.add("--iface_name", cmd.getInPortName());
+			String result = command.execute();
+			if (result.equalsIgnoreCase("SUCCESS")) {
+				return new Answer(cmd, true, result);
+			} else {
+				return new Answer(cmd, false, result);
+			}
+		} catch (Exception e) {
+			s_logger.warn("caught execption when destroy ovs tunnel", e);
+			return new Answer(cmd, false, e.getMessage());
+		}
+	}
+	// end Tuna added
 
     private CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
         List<PhysicalNetworkSetupInfo> phyNics = cmd
@@ -2930,7 +3143,8 @@ ServerResource {
         }
     }
 
-    private Answer execute(RebootCommand cmd) {
+
+	private Answer execute(RebootCommand cmd) {
 
         synchronized (_vms) {
             _vms.put(cmd.getVmName(), State.Starting);
@@ -3011,7 +3225,8 @@ ServerResource {
         }
     }
 
-    protected Answer execute(StopCommand cmd) {
+
+	protected Answer execute(StopCommand cmd) {
         final String vmName = cmd.getVmName();
 
         State state = null;
@@ -3178,8 +3393,8 @@ ServerResource {
 
         if (vmTO.getMinRam() != vmTO.getMaxRam()){
             grd.setMemBalloning(true);
-            grd.setCurrentMem((long)vmTO.getMinRam()/1024);
-            grd.setMemorySize((long)vmTO.getMaxRam()/1024);
+            grd.setCurrentMem(vmTO.getMinRam()/1024);
+            grd.setMemorySize(vmTO.getMaxRam()/1024);
         }
         else{
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
@@ -3268,7 +3483,8 @@ ServerResource {
         }
     }
 
-    protected synchronized StartAnswer execute(StartCommand cmd) {
+
+	protected synchronized StartAnswer execute(StartCommand cmd) {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         vmSpec.setVncAddr(cmd.getHostIp());
         String vmName = vmSpec.getName();
@@ -3317,8 +3533,31 @@ ServerResource {
             }
 
             // pass cmdline info to system vms
+			// if (vmSpec.getType() != VirtualMachine.Type.User) {
+			// passCmdLine(vmName, vmSpec.getBootArgs() );
+			// }
+			// merge with master branch
+			// pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                passCmdLine(vmName, vmSpec.getBootArgs() );
+				if ((_kernelVersion < 2006034) && (conn.getVersion() < 1001000)) {
+					// CLOUDSTACK-2823: try passCmdLine some times if kernel <
+					// 2.6.34 and qemu <1.1.0 on hypervisor
+					// (for instance, CentOS 6.4)
+					// wait for 5 minutes at most
+					for (int count = 0; count < 30; count++) {
+						boolean succeed = passCmdLine(vmName, vmSpec.getBootArgs());
+						if (succeed) {
+							break;
+						}
+						try {
+							Thread.sleep(5000);
+						} catch (InterruptedException e) {
+							s_logger.trace("Ignoring InterruptedException.", e);
+						}
+					}
+				} else {
+					passCmdLine(vmName, vmSpec.getBootArgs());
+				}
             }
 
             state = State.Running;
@@ -4589,7 +4828,7 @@ ServerResource {
                 bytes_rd += blockStats.rd_bytes;
                 bytes_wr += blockStats.wr_bytes;
             }
-            
+
             if (oldStats != null) {
                 long deltaiord = io_rd - oldStats._io_rd;
                 if (deltaiord > 0)
@@ -4604,7 +4843,7 @@ ServerResource {
                 if (deltabyteswr > 0)
                     stats.setDiskWriteKBs(deltabyteswr / 1024);
             }
-            
+
             /* save to Hashmap */
             vmStats newStat = new vmStats();
             newStat._usedTime = info.cpuTime;
