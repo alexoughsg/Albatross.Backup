@@ -455,7 +455,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             hostSpec.setHostName(host);
             hostSpec.setForce(true);		// forcely take over the host
 
-            ManagedObjectReference morTask = serviceContext.getService().addHostTask(morCluster, hostSpec, true, null, null);
+            ManagedObjectReference morTask = serviceContext.getService().addHost_Task(morCluster, hostSpec, true, null, null);
             boolean taskResult = vclient.waitForTask(morTask);
             if(!taskResult) {
                 s_logger.error("Unable to add host " + host + " to vSphere cluster due to " + TaskMO.getTaskFailureInfo(serviceContext, morTask));
