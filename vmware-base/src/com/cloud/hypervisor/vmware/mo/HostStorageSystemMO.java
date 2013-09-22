@@ -38,11 +38,11 @@ public class HostStorageSystemMO extends BaseMO {
 	}
 	
 	public void addInternetScsiStaticTargets(String iScsiHbaDevice, List<HostInternetScsiHbaStaticTarget> lstTargets) throws Exception {
-		_context.getService().addInternetScsiStaticTargets(_mor, iScsiHbaDevice, lstTargets);
+		_context.getService().addInternetScsiStaticTargets(_mor, iScsiHbaDevice, lstTargets.toArray(new HostInternetScsiHbaStaticTarget[0]));
 	}
 	
 	public void removeInternetScsiStaticTargets(String iScsiHbaDevice, List<HostInternetScsiHbaStaticTarget> lstTargets) throws Exception {
-		_context.getService().removeInternetScsiStaticTargets(_mor, iScsiHbaDevice, lstTargets);
+		_context.getService().removeInternetScsiStaticTargets(_mor, iScsiHbaDevice, lstTargets.toArray(new HostInternetScsiHbaStaticTarget[0]));
 	}
 	
 	public void rescanHba(String iScsiHbaDevice) throws Exception {

@@ -39,7 +39,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
 	public void DeleteFile(String datastoreFullPath) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getValue() + ", file datastore path: " + datastoreFullPath);
+			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getVal() + ", file datastore path: " + datastoreFullPath);
 
 		_context.getService().deleteFile(_mor, datastoreFullPath);
 
@@ -49,10 +49,10 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
 	public HostDatastoreBrowserSearchResults searchDatastore(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
+			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getVal() + ", file datastore path: " + datastorePath);
 
 		try {
-			ManagedObjectReference morTask = _context.getService().searchDatastoreTask(_mor, datastorePath, searchSpec);
+			ManagedObjectReference morTask = _context.getService().searchDatastore_Task(_mor, datastorePath, searchSpec);
 
 			boolean result = _context.getVimClient().waitForTask(morTask);
 			if(result) {
@@ -73,7 +73,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
 	public HostDatastoreBrowserSearchResults searchDatastore(String datastorePath, String fileName, boolean caseInsensitive) throws Exception {
 		HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
 		spec.setSearchCaseInsensitive(caseInsensitive);
-		spec.getMatchPattern().add(fileName);
+		spec.setMatchPattern(new String[] {fileName});
 
 		return searchDatastore(datastorePath, spec);
 	}
@@ -81,10 +81,10 @@ public class HostDatastoreBrowserMO extends BaseMO {
     @SuppressWarnings("unchecked")
     public ArrayList<HostDatastoreBrowserSearchResults> searchDatastoreSubFolders(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
+			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getVal() + ", file datastore path: " + datastorePath);
 
 		try {
-			ManagedObjectReference morTask = _context.getService().searchDatastoreSubFoldersTask(_mor, datastorePath, searchSpec);
+			ManagedObjectReference morTask = _context.getService().searchDatastoreSubFolders_Task(_mor, datastorePath, searchSpec);
 
 			boolean result = _context.getVimClient().waitForTask(morTask);
 			if(result) {
@@ -105,7 +105,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
     public ArrayList<HostDatastoreBrowserSearchResults> searchDatastoreSubFolders(String datastorePath, String fileName, boolean caseInsensitive) throws Exception {
         HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
         spec.setSearchCaseInsensitive(caseInsensitive);
-        spec.getMatchPattern().add(fileName);
+        spec.setMatchPattern(new String[] {fileName});
 
         return searchDatastoreSubFolders(datastorePath, spec);
     }

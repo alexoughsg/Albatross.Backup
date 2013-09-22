@@ -42,7 +42,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     	String destName, ManagedObjectReference morDestDc, VirtualDiskSpec diskSpec,
     	boolean force) throws Exception {
 
-    	ManagedObjectReference morTask = _context.getService().copyVirtualDiskTask(_mor, srcName, morSrcDc, destName, morDestDc, diskSpec, force);
+    	ManagedObjectReference morTask = _context.getService().copyVirtualDisk_Task(_mor, srcName, morSrcDc, destName, morDestDc, diskSpec, force);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -53,7 +53,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void createVirtualDisk(String name, ManagedObjectReference morDc, VirtualDiskSpec diskSpec) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().createVirtualDiskTask(_mor, name, morDc, diskSpec);
+    	ManagedObjectReference morTask = _context.getService().createVirtualDisk_Task(_mor, name, morDc, diskSpec);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -64,7 +64,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void defragmentVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().defragmentVirtualDiskTask(_mor, name, morDc);
+    	ManagedObjectReference morTask = _context.getService().defragmentVirtualDisk_Task(_mor, name, morDc);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -74,7 +74,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void deleteVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().deleteVirtualDiskTask(_mor, name, morDc);
+    	ManagedObjectReference morTask = _context.getService().deleteVirtualDisk_Task(_mor, name, morDc);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -84,7 +84,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void eagerZeroVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().eagerZeroVirtualDiskTask(_mor, name, morDc);
+    	ManagedObjectReference morTask = _context.getService().eagerZeroVirtualDisk_Task(_mor, name, morDc);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -94,7 +94,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void extendVirtualDisk(String name, ManagedObjectReference morDc, long newCapacityKb, boolean eagerZero) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().extendVirtualDiskTask(_mor, name, morDc, newCapacityKb, eagerZero);
+    	ManagedObjectReference morTask = _context.getService().extendVirtualDisk_Task(_mor, name, morDc, newCapacityKb, eagerZero);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -104,7 +104,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void inflateVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().inflateVirtualDiskTask(_mor, name, morDc);
+    	ManagedObjectReference morTask = _context.getService().inflateVirtualDisk_Task(_mor, name, morDc);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -113,7 +113,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void shrinkVirtualDisk(String name, ManagedObjectReference morDc, boolean copy) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().shrinkVirtualDiskTask(_mor, name, morDc, copy);
+    	ManagedObjectReference morTask = _context.getService().shrinkVirtualDisk_Task(_mor, name, morDc, copy);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -122,7 +122,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void zeroFillVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().zeroFillVirtualDiskTask(_mor, name, morDc);
+    	ManagedObjectReference morTask = _context.getService().zeroFillVirtualDisk_Task(_mor, name, morDc);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -133,7 +133,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     public void moveVirtualDisk(String srcName, ManagedObjectReference morSrcDc,
     	String destName, ManagedObjectReference morDestDc, boolean force) throws Exception {
 
-    	ManagedObjectReference morTask = _context.getService().moveVirtualDiskTask(_mor, srcName, morSrcDc,
+    	ManagedObjectReference morTask = _context.getService().moveVirtualDisk_Task(_mor, srcName, morSrcDc,
     		destName, morDestDc, force);
 
 		boolean result = _context.getVimClient().waitForTask(morTask);

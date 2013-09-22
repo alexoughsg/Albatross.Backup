@@ -54,15 +54,15 @@ public class HostDatastoreSystemMO extends BaseMO {
 		int key = cfmMo.getCustomFieldKey("Datastore", CustomFieldConstants.CLOUD_UUID);
 		assert(key != 0);
 
-		List<ObjectContent> ocs = getDatastorePropertiesOnHostDatastoreSystem(
+		ObjectContent[] ocs = getDatastorePropertiesOnHostDatastoreSystem(
 			new String[] { "name", String.format("value[%d]", key) });
 		if(ocs != null) {
 			for(ObjectContent oc : ocs) {
-				if(oc.getPropSet().get(0).getVal().equals(name))
+				if(oc.getPropSet()[0].getVal().equals(name))
 					return oc.getObj();
 
-				if(oc.getPropSet().size() > 1) {
-					DynamicProperty prop = oc.getPropSet().get(1);
+				if(oc.getPropSet().length > 1) {
+					DynamicProperty prop = oc.getPropSet()[1];
 					if(prop != null && prop.getVal() != null) {
 						if(prop.getVal() instanceof CustomFieldStringValue) {
 							String val = ((CustomFieldStringValue)prop.getVal()).getValue();
@@ -143,13 +143,13 @@ public class HostDatastoreSystemMO extends BaseMO {
 		return null;
 	}
 
-	public List<HostScsiDisk> queryAvailableDisksForVmfs() throws Exception {
+	public HostScsiDisk[] queryAvailableDisksForVmfs() throws Exception {
 		return _context.getService().queryAvailableDisksForVmfs(_mor, null);
 	}
 
 	public ManagedObjectReference createVmfsDatastore(String datastoreName, HostScsiDisk hostScsiDisk) throws Exception {
 		// just grab the first instance of VmfsDatastoreOption
-		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 5).get(0);
+		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 5)[0];
 
 		VmfsDatastoreCreateSpec vmfsDatastoreCreateSpec = (VmfsDatastoreCreateSpec)vmfsDatastoreOption.getSpec();
 
@@ -198,11 +198,11 @@ public class HostDatastoreSystemMO extends BaseMO {
 		return null;
 	}
 
-	public List<ObjectContent> getDatastorePropertiesOnHostDatastoreSystem(String[] propertyPaths) throws Exception {
+	public ObjectContent[] getDatastorePropertiesOnHostDatastoreSystem(String[] propertyPaths) throws Exception {
 
 		PropertySpec pSpec = new PropertySpec();
 		pSpec.setType("Datastore");
-		pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
+		pSpec.setPathSet(propertyPaths);
 
 	    TraversalSpec hostDsSys2DatastoreTraversal = new TraversalSpec();
 	    hostDsSys2DatastoreTraversal.setType("HostDatastoreSystem");
@@ -212,15 +212,15 @@ public class HostDatastoreSystemMO extends BaseMO {
 	    ObjectSpec oSpec = new ObjectSpec();
 	    oSpec.setObj(_mor);
 	    oSpec.setSkip(Boolean.TRUE);
-	    oSpec.getSelectSet().add(hostDsSys2DatastoreTraversal);
+	    oSpec.setSelectSet(new TraversalSpec[] { hostDsSys2DatastoreTraversal});
 
 	    PropertyFilterSpec pfSpec = new PropertyFilterSpec();
-	    pfSpec.getPropSet().add(pSpec);
-	    pfSpec.getObjectSet().add(oSpec);
+	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
+	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
         List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
         pfSpecArr.add(pfSpec);
 
 	    return _context.getService().retrieveProperties(
-	    	_context.getPropertyCollector(), pfSpecArr);
+	    	_context.getPropertyCollector(), pfSpecArr.toArray(new PropertyFilterSpec[0]));
 	}
 }

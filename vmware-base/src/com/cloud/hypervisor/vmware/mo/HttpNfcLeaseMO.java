@@ -60,9 +60,9 @@ public class HttpNfcLeaseMO extends BaseMO {
             stateVal = stateElement.getFirstChild().getTextContent();
         }
         if (stateVal != null) {
-            return HttpNfcLeaseState.fromValue(stateVal);
+            return HttpNfcLeaseState.valueOf(stateVal);
         }
-        return HttpNfcLeaseState.ERROR;
+        return HttpNfcLeaseState.error;
 	}
 
 	public HttpNfcLeaseState waitState(HttpNfcLeaseState[] states) throws Exception {
@@ -72,7 +72,7 @@ public class HttpNfcLeaseMO extends BaseMO {
 		HttpNfcLeaseState state;
 		while(true) {
 			state = getState();
-			if(state == HttpNfcLeaseState.READY || state == HttpNfcLeaseState.ERROR)
+			if(state == HttpNfcLeaseState.ready || state == HttpNfcLeaseState.error)
 				return state;
 		}
 	}
@@ -83,7 +83,7 @@ public class HttpNfcLeaseMO extends BaseMO {
 		return (HttpNfcLeaseInfo)_context.getVimClient().getDynamicProperty(_mor, "info");
 	}
 
-	public List<HttpNfcLeaseManifestEntry> getLeaseManifest() throws Exception {
+	public HttpNfcLeaseManifestEntry[] getLeaseManifest() throws Exception {
 		return _context.getService().httpNfcLeaseGetManifest(_mor);
 	}
 
@@ -110,7 +110,7 @@ public class HttpNfcLeaseMO extends BaseMO {
 	}
 
 	public static long calcTotalBytes(OvfCreateImportSpecResult ovfImportResult) {
-		List<OvfFileItem> fileItemArr = ovfImportResult.getFileItem();
+		OvfFileItem[] fileItemArr = ovfImportResult.getFileItem();
 		long totalBytes = 0;
 		if (fileItemArr != null) {
 			for (OvfFileItem fi : fileItemArr) {

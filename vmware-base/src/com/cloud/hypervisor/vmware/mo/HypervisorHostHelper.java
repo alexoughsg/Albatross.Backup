@@ -27,7 +27,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;

@@ -46,20 +46,20 @@ public class DistributedVirtualSwitchMO extends BaseMO {
     public void createDVPortGroup(DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
         List<DVPortgroupConfigSpec> dvPortGroupSpecArray = new ArrayList<DVPortgroupConfigSpec>();
         dvPortGroupSpecArray.add(dvPortGroupSpec);
-        _context.getService().addDVPortgroupTask(_mor, dvPortGroupSpecArray);
+        _context.getService().addDVPortgroup_Task(_mor, dvPortGroupSpecArray.toArray(new DVPortgroupConfigSpec[0]));
     }
 
     public void updateDvPortGroup(ManagedObjectReference dvPortGroupMor, DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
         // TODO(sateesh): Update numPorts
-        _context.getService().reconfigureDVPortgroupTask(dvPortGroupMor, dvPortGroupSpec);
+        _context.getService().reconfigureDVPortgroup_Task(dvPortGroupMor, dvPortGroupSpec);
     }
 
     public void updateVMWareDVSwitch(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {
-        _context.getService().reconfigureDvsTask(dvSwitchMor, dvsSpec);
+        _context.getService().reconfigureDvs_Task(dvSwitchMor, dvsSpec);
     }
 
     public TaskInfo updateVMWareDVSwitchGetTask(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {
-        ManagedObjectReference task = _context.getService().reconfigureDvsTask(dvSwitchMor, dvsSpec);
+        ManagedObjectReference task = _context.getService().reconfigureDvs_Task(dvSwitchMor, dvsSpec);
         TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
         boolean waitvalue = _context.getVimClient().waitForTask(task);
         return info;
@@ -77,10 +77,9 @@ public class DistributedVirtualSwitchMO extends BaseMO {
         Map<Integer, HypervisorHostHelper.PvlanType> result = new HashMap<Integer, HypervisorHostHelper.PvlanType>();
 
         VMwareDVSConfigInfo configinfo = (VMwareDVSConfigInfo)_context.getVimClient().getDynamicProperty(dvSwitchMor, "config");
-        List<VMwareDVSPvlanMapEntry> pvlanconfig = null;
-        pvlanconfig = configinfo.getPvlanConfig();
+        VMwareDVSPvlanMapEntry[] pvlanconfig = configinfo.getPvlanConfig();
 
-        if (null == pvlanconfig || 0 == pvlanconfig.size()) {
+        if (null == pvlanconfig || 0 == pvlanconfig.length) {
             return result;
         }
         // Iterate through the pvlanMapList and check if the specified vlan id and pvlan id exist. If they do, set the fields in result accordingly.

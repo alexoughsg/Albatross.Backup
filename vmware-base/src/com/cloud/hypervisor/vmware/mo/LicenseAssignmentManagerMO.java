@@ -45,15 +45,15 @@ public class LicenseAssignmentManagerMO extends BaseMO {
     }
 
     public LicenseAssignmentManagerLicenseAssignment getAssignedLicenseToHost(ManagedObjectReference hostMor) throws Exception {
-        List<LicenseAssignmentManagerLicenseAssignment> licenses = _context.getVimClient().getService().queryAssignedLicenses(_mor, hostMor.getValue());
-        return licenses.get(0);
+        LicenseAssignmentManagerLicenseAssignment[] licenses = _context.getVimClient().getService().queryAssignedLicenses(_mor, hostMor.getVal());
+        return licenses[0];
     }
 
     public boolean isFeatureSupported(String featureKey, ManagedObjectReference hostMor) throws Exception {
         boolean featureSupported = false;
 
         // Retrieve host license properties
-        List<KeyAnyValue> props = getHostLicenseProperties(hostMor);
+        KeyAnyValue[] props = getHostLicenseProperties(hostMor);
 
         // Check host license properties to see if specified feature is supported by the license.
         for (KeyAnyValue prop : props) {
@@ -76,7 +76,7 @@ public class LicenseAssignmentManagerMO extends BaseMO {
         return license.getAssignedLicense();
     }
 
-    public List<KeyAnyValue> getHostLicenseProperties(ManagedObjectReference hostMor) throws Exception {
+    public KeyAnyValue[] getHostLicenseProperties(ManagedObjectReference hostMor) throws Exception {
         return getHostLicenseInfo(hostMor).getProperties();
     }
 
