@@ -193,14 +193,14 @@ public class VmwareContext {
 		ManagedObjectReference mor = getRootFolder();
 		for(int i=0; i < tokens.length;i++) {
 			String token = tokens[i];
-			List<ObjectContent> ocs;
+			ObjectContent[] ocs;
 			PropertySpec pSpec = null;
 			ObjectSpec oSpec = null;
 			if(mor.getType().equalsIgnoreCase("Datacenter")) {
 				pSpec = new PropertySpec();
 				pSpec.setAll(false);
 				pSpec.setType("ManagedEntity");
-				pSpec.getPathSet().add("name");
+				pSpec.setPathSet(new String[] {"name"});
 
 			    TraversalSpec dcHostFolderTraversal = new TraversalSpec();
 			    dcHostFolderTraversal.setType("Datacenter");
@@ -210,13 +210,13 @@ public class VmwareContext {
 			    oSpec = new ObjectSpec();
 			    oSpec.setObj(mor);
 			    oSpec.setSkip(Boolean.TRUE);
-			    oSpec.getSelectSet().add(dcHostFolderTraversal);
+			    oSpec.setSelectSet(new TraversalSpec[] { dcHostFolderTraversal });
 
 			} else if(mor.getType().equalsIgnoreCase("Folder")) {
 				pSpec = new PropertySpec();
 				pSpec.setAll(false);
 				pSpec.setType("ManagedEntity");
-				pSpec.getPathSet().add("name");
+				pSpec.setPathSet(new String[] {"name"});
 
 			    TraversalSpec folderChildrenTraversal = new TraversalSpec();
 			    folderChildrenTraversal.setType("Folder");
@@ -226,13 +226,13 @@ public class VmwareContext {
 			    oSpec = new ObjectSpec();
 			    oSpec.setObj(mor);
 			    oSpec.setSkip(Boolean.TRUE);
-			    oSpec.getSelectSet().add(folderChildrenTraversal);
+			    oSpec.setSelectSet(new TraversalSpec[] { folderChildrenTraversal });
 
 
 			} else if(mor.getType().equalsIgnoreCase("ClusterComputeResource")) {
 				pSpec = new PropertySpec();
 				pSpec.setType("ManagedEntity");
-				pSpec.getPathSet().add("name");
+				pSpec.setPathSet(new String[] {"name"});
 
 			    TraversalSpec clusterHostTraversal = new TraversalSpec();
 			    clusterHostTraversal.setType("ClusterComputeResource");
@@ -242,7 +242,7 @@ public class VmwareContext {
 			    oSpec = new ObjectSpec();
 			    oSpec.setObj(mor);
 			    oSpec.setSkip(Boolean.TRUE);
-			    oSpec.getSelectSet().add(clusterHostTraversal);
+			    oSpec.setSelectSet(new TraversalSpec[] { clusterHostTraversal });
 
 			} else {
 				s_logger.error("Invalid inventory path, path element can only be datacenter and folder");
@@ -250,16 +250,16 @@ public class VmwareContext {
 			}
 
             PropertyFilterSpec pfSpec = new PropertyFilterSpec();
-            pfSpec.getPropSet().add(pSpec);
-            pfSpec.getObjectSet().add(oSpec);
+            pfSpec.setPropSet(new PropertySpec[] { pSpec });
+            pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
             List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
             pfSpecArr.add(pfSpec);
-            ocs = getService().retrieveProperties(getPropertyCollector(), pfSpecArr);
+            ocs = getService().retrieveProperties(getPropertyCollector(), pfSpecArr.toArray(new PropertyFilterSpec[0]));
 
-		    if(ocs != null && ocs.size() > 0) {
+		    if(ocs != null && ocs.length > 0) {
 		    	boolean found = false;
 		    	for(ObjectContent oc : ocs) {
-		    		String name = oc.getPropSet().get(0).getVal().toString();
+		    		String name = oc.getPropSet()[0].getVal().toString();
 		    		if(name.equalsIgnoreCase(token) || name.equalsIgnoreCase("host")) {
 		    			mor = oc.getObj();
 		    			found  = true;

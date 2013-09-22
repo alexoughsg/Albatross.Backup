@@ -147,7 +147,7 @@ public class VmwareHelper {
         final VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
 
         dvPortConnection.setSwitchUuid(dvSwitchUuid);
-        dvPortConnection.setPortgroupKey(morNetwork.getValue());
+        dvPortConnection.setPortgroupKey(morNetwork.getVal());
         dvPortBacking.setPort(dvPortConnection);
         nic.setBacking(dvPortBacking);
         nic.setKey(30);
@@ -171,7 +171,7 @@ public class VmwareHelper {
 		VirtualDisk disk = new VirtualDisk();
 
 		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+        backingInfo.setDiskMode(VirtualDiskMode.persistent.toString());
     	backingInfo.setThinProvisioned(true);
     	backingInfo.setEagerlyScrub(false);
         backingInfo.setDatastore(morDs);
@@ -279,7 +279,7 @@ public class VmwareHelper {
 			disk = new VirtualDisk();
 			backingInfo = new VirtualDiskFlatVer2BackingInfo();
 	        backingInfo.setDatastore(morDs);
-	        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+	        backingInfo.setDiskMode(VirtualDiskMode.persistent.toString());
 			disk.setBacking(backingInfo);
 			
 			if(controllerKey < 0)
@@ -321,7 +321,7 @@ public class VmwareHelper {
 		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
         backingInfo.setDatastore(vmdkDatastorePathChain[0].second());
         backingInfo.setFileName(vmdkDatastorePathChain[0].first());
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+        backingInfo.setDiskMode(VirtualDiskMode.persistent.toString());
         if(vmdkDatastorePathChain.length > 1) {
         	Pair<String, ManagedObjectReference>[] parentDisks = new Pair[vmdkDatastorePathChain.length - 1];
         	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
@@ -354,7 +354,7 @@ public class VmwareHelper {
 
 		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
 		parentBacking.setDatastore(morDs);
-		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+		parentBacking.setDiskMode(VirtualDiskMode.persistent.toString());
 
 		if(parentDatastorePathList.length > 1) {
 			String[] nextDatastorePathList = new String[parentDatastorePathList.length -1];
@@ -372,7 +372,7 @@ public class VmwareHelper {
 
 		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
 		parentBacking.setDatastore(parentDatastorePathList[0].second());
-		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+		parentBacking.setDiskMode(VirtualDiskMode.persistent.toString());
 
 		if(parentDatastorePathList.length > 1) {
 			Pair<String, ManagedObjectReference>[] nextDatastorePathList = new Pair[parentDatastorePathList.length -1];
@@ -430,20 +430,20 @@ public class VmwareHelper {
 		return disks[0];
 	}
 
-	public static ManagedObjectReference findSnapshotInTree(List<VirtualMachineSnapshotTree> snapTree, String findName) {
+	public static ManagedObjectReference findSnapshotInTree(VirtualMachineSnapshotTree[] snapTree, String findName) {
 		assert(findName != null);
 
 		ManagedObjectReference snapMor = null;
 		if (snapTree == null)
 			return snapMor;
 
-		for (int i = 0; i < snapTree.size() && snapMor == null; i++) {
-			VirtualMachineSnapshotTree node = snapTree.get(i);
+		for (int i = 0; i < snapTree.length && snapMor == null; i++) {
+			VirtualMachineSnapshotTree node = snapTree[i];
 
 			if (node.getName().equals(findName)) {
 				snapMor = node.getSnapshot();
 			} else {
-				List<VirtualMachineSnapshotTree> childTree = node.getChildSnapshotList();
+				VirtualMachineSnapshotTree[] childTree = node.getChildSnapshotList();
 				snapMor = findSnapshotInTree(childTree, findName);
 			}
 		}
@@ -593,7 +593,7 @@ public class VmwareHelper {
 	}
 
 	public static Object getPropValue(ObjectContent oc, String name) {
-		List<DynamicProperty> props = oc.getPropSet();
+		DynamicProperty[] props = oc.getPropSet();
 
 		for(DynamicProperty prop : props) {
 			if(prop.getName().equalsIgnoreCase(name))
