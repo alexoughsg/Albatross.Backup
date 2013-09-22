@@ -46,7 +46,7 @@ public class BaseMO {
 		_context = context;
 		_mor = new ManagedObjectReference();
 		_mor.setType(morType);
-		_mor.setValue(morValue);
+		_mor.setVal(morValue);
 	}
 
 	public VmwareContext getContext() {
@@ -70,7 +70,7 @@ public class BaseMO {
 	}
 
 	public boolean destroy() throws Exception {
-        ManagedObjectReference morTask = _context.getService().destroyTask(_mor);
+        ManagedObjectReference morTask = _context.getService().destroy_Task(_mor);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if(result) {
@@ -87,7 +87,7 @@ public class BaseMO {
 	}
 
 	public boolean rename(String newName) throws Exception {
-	    ManagedObjectReference morTask = _context.getService().renameTask(_mor, newName);
+	    ManagedObjectReference morTask = _context.getService().rename_Task(_mor, newName);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if(result) {
