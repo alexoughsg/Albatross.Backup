@@ -259,7 +259,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         morHyperHost.setType(hostTokens[0]);
-        morHyperHost.setValue(hostTokens[1]);
+        morHyperHost.setVal(hostTokens[1]);
 
         if (morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
             HostMO hostMo = new HostMO(context, morHyperHost);
@@ -318,7 +318,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         assert (hostTokens.length == 2);
 
         morHyperHost.setType(hostTokens[0]);
-        morHyperHost.setValue(hostTokens[1]);
+        morHyperHost.setVal(hostTokens[1]);
 
         if (morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
             HostMO hostMo = new HostMO(context, morHyperHost);
