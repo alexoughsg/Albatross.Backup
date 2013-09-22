@@ -30,7 +30,9 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.MessageContext;
 
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.InvalidCollectorVersion;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
+import com.vmware.vim25.InvalidProperty;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
@@ -43,6 +45,7 @@ import com.vmware.vim25.PropertyChangeOp;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertyFilterUpdate;
 import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.RuntimeFault;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.ServiceContent;
@@ -281,7 +284,7 @@ public class VmwareClient {
      * @throws RuntimeFaultFaultMsg
      * @throws InvalidPropertyFaultMsg
      */
-    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    public boolean waitForTask(ManagedObjectReference task) throws InvalidProperty, RuntimeFault, InvalidCollectorVersion {
 
         boolean retVal = false;
 

@@ -48,23 +48,5 @@
       <artifactId>cloud-engine-orchestration</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim25</artifactId>
-      <version>${cs.vmware.api.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.axis</groupId>
-      <artifactId>axis</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.axis</groupId>
-      <artifactId>axis-jaxrpc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>wsdl4j</groupId>
-      <artifactId>wsdl4j</artifactId>
-    </dependency>
   </dependencies>
 </project>
