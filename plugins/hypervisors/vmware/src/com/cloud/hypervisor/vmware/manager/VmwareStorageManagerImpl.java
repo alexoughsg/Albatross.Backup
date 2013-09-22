@@ -270,7 +270,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
+            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getVal()).getBytes()).toString();
             // truncate template name to 32 chars to ensure they work well with vSphere API's.
             templateUuidName = templateUuidName.replace("-", "");
 
@@ -1239,12 +1239,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         fqf.setModification(true);
         searchSpec.setDetails(fqf);
         searchSpec.setSearchCaseInsensitive(false);
-        searchSpec.getMatchPattern().add(fileName);
+        searchSpec.setMatchPattern(new String[] {fileName});
         ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.
                 searchDatastoreSubFolders(datastorePath, searchSpec);
         for(HostDatastoreBrowserSearchResults result : results){
             if (result != null) {
-                List<FileInfo> info = result.getFile();
+                FileInfo[] info = result.getFile();
                 for (FileInfo fi : info) {
                     if(exceptFileName != null && fi.getPath().contains(exceptFileName)) {
                         continue;
