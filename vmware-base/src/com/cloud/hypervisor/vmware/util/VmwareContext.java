@@ -43,6 +43,7 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.utils.ActionDelegate;
+
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
@@ -52,6 +53,7 @@ import com.vmware.vim25.ServiceContent;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.mo.PropertyCollector;
 
 public class VmwareContext {
     private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
@@ -130,10 +132,6 @@ public class VmwareContext {
 
 	public String getServerAddress() {
 		return _serverAddress;
-	}
-
-	public VimPortType getService() {
-		return _vimClient.getService();
 	}
 
 	public ServiceContent getServiceContent() {
@@ -254,7 +252,8 @@ public class VmwareContext {
             pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
             List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
             pfSpecArr.add(pfSpec);
-            ocs = getService().retrieveProperties(getPropertyCollector(), pfSpecArr.toArray(new PropertyFilterSpec[0]));
+            PropertyCollector pc = new PropertyCollector(_vimClient.getServiceInstance().getServerConnection(), mor); 
+            ocs = pc.retrieveProperties(pfSpecArr.toArray(new PropertyFilterSpec[0]));
 
 		    if(ocs != null && ocs.length > 0) {
 		    	boolean found = false;
