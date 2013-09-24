@@ -31,6 +31,11 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.mo.Datacenter;
+import com.vmware.vim25.mo.Datastore;
+import com.vmware.vim25.mo.FileManager;
+import com.vmware.vim25.mo.PropertyCollector;
+import com.vmware.vim25.mo.Task;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -40,13 +45,16 @@ public class DatastoreMO extends BaseMO {
 
 	private String _name;
 	private Pair<DatacenterMO, String> _ownerDc;
+	protected Datastore _datastore;
 
 	public DatastoreMO(VmwareContext context, ManagedObjectReference morDatastore) {
 		super(context, morDatastore);
+		_datastore = (Datastore) this.getManagedEntity();
 	}
 
 	public DatastoreMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_datastore = (Datastore) this.getManagedEntity();
 	}
 
 	@Override
@@ -77,7 +85,7 @@ public class DatastoreMO extends BaseMO {
 
 		PropertySpec pSpec = new PropertySpec();
 		pSpec.setType("Datacenter");
-		pSpec.getPathSet().add("name");
+		pSpec.setPathSet(new String[] { "name" });
 
 	    TraversalSpec folderParentTraversal = new TraversalSpec();
 	    folderParentTraversal.setType("Folder");
@@ -85,45 +93,46 @@ public class DatastoreMO extends BaseMO {
 	    folderParentTraversal.setName("folderParentTraversal");
 	    SelectionSpec sSpec = new SelectionSpec();
 	    sSpec.setName("folderParentTraversal");
-	    folderParentTraversal.getSelectSet().add(sSpec);
+	    folderParentTraversal.setSelectSet( new SelectionSpec[] { sSpec });
 
 	    TraversalSpec dsParentTraversal = new TraversalSpec();
 	    dsParentTraversal.setType("Datastore");
 	    dsParentTraversal.setPath("parent");
 	    dsParentTraversal.setName("dsParentTraversal");
-	    dsParentTraversal.getSelectSet().add(folderParentTraversal);
+	    dsParentTraversal.setSelectSet(new TraversalSpec[] { folderParentTraversal });
 
 	    ObjectSpec oSpec = new ObjectSpec();
 	    oSpec.setObj(getMor());
 	    oSpec.setSkip(Boolean.TRUE);
-	    oSpec.getSelectSet().add(dsParentTraversal);
+	    oSpec.setSelectSet(new TraversalSpec[] { dsParentTraversal });
 
 	    PropertyFilterSpec pfSpec = new PropertyFilterSpec();
-	    pfSpec.getPropSet().add(pSpec);
-	    pfSpec.getObjectSet().add(oSpec);
+	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
+	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
         List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
         pfSpecArr.add(pfSpec);
 
-	    List<ObjectContent> ocs = _context.getService().retrieveProperties(
-	    	_context.getPropertyCollector(), pfSpecArr);
+        PropertyCollector pc = _context.getPropertyCollector();
+	    ObjectContent[] ocs = pc.retrieveProperties(pfSpecArr.toArray(new PropertyFilterSpec[0]));
 
-	    assert(ocs != null && ocs.size() > 0);
-	    assert(ocs.get(0).getObj() != null);
-	    assert(ocs.get(0).getPropSet() != null);
-	    String dcName = ocs.get(0).getPropSet().get(0).getVal().toString();
-	    _ownerDc = new Pair<DatacenterMO, String>(new DatacenterMO(_context, ocs.get(0).getObj()), dcName);
+	    assert(ocs != null && ocs.length > 0);
+	    assert(ocs[0].getObj() != null);
+	    assert(ocs[0].getPropSet() != null);
+	    String dcName = ocs[0].getPropSet()[0].getVal().toString();
+	    _ownerDc = new Pair<DatacenterMO, String>(new DatacenterMO(_context, ocs[0].getObj()), dcName);
 	    return _ownerDc;
 	}
 
 	public void makeDirectory(String path, ManagedObjectReference morDc) throws Exception {
 		String datastoreName = getName();
-		ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
+		Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+		FileManager fileManager = _context.getFileManager();
 
 		String fullPath = path;
 		if(!DatastoreFile.isFullDatastorePath(fullPath))
 			fullPath = String.format("[%s] %s", datastoreName, path);
 
-		_context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
+		fileManager.makeDirectory(fullPath, datacenter, true);
 	}
 	
 	public String getDatastoreRootPath() throws Exception {
@@ -169,8 +178,9 @@ public class DatastoreMO extends BaseMO {
 			s_logger.info("Unable to test file existence due to exception " + e.getClass().getName() + ", skip deleting of it");
 			return true;
 		}
-
-		ManagedObjectReference morTask = _context.getService().deleteDatastoreFileTask(morFileManager, fullPath, morDc);
+		Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+		Task task = _context.getFileManager().deleteDatastoreFile_Task(fullPath, datacenter);
+		ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(result) {
@@ -190,17 +200,18 @@ public class DatastoreMO extends BaseMO {
 		DatastoreMO destDsMo = new DatastoreMO(_context, morDestDs);
 		String destDsName = destDsMo.getName();
 
-		ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
+		Datacenter sourceDatacenter = new Datacenter(_context.getServerConnection(), morSrcDc);
 		String srcFullPath = srcFilePath;
 		if(!DatastoreFile.isFullDatastorePath(srcFullPath))
 			srcFullPath = String.format("[%s] %s", srcDsName, srcFilePath);
 
+		Datacenter destinationDatacenter = new Datacenter(_context.getServerConnection(), morDestDc);
 		String destFullPath = destFilePath;
 		if(!DatastoreFile.isFullDatastorePath(destFullPath))
 			destFullPath = String.format("[%s] %s", destDsName, destFilePath);
 
-		ManagedObjectReference morTask = _context.getService().copyDatastoreFileTask(morFileManager,
-			srcFullPath, morSrcDc, destFullPath, morDestDc, forceOverwrite);
+		Task task = _context.getFileManager().copyDatastoreFile_Task(srcFullPath, sourceDatacenter, destFullPath, destinationDatacenter, forceOverwrite);
+		ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(result) {
@@ -220,17 +231,18 @@ public class DatastoreMO extends BaseMO {
 		DatastoreMO destDsMo = new DatastoreMO(_context, morDestDs);
 		String destDsName = destDsMo.getName();
 
-		ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
+        Datacenter sourceDatacenter = new Datacenter(_context.getServerConnection(), morSrcDc);
 		String srcFullPath = srcFilePath;
 		if(!DatastoreFile.isFullDatastorePath(srcFullPath))
 			srcFullPath = String.format("[%s] %s", srcDsName, srcFilePath);
 
+        Datacenter destinationDatacenter = new Datacenter(_context.getServerConnection(), morDestDc);
 		String destFullPath = destFilePath;
 		if(!DatastoreFile.isFullDatastorePath(destFullPath))
 			destFullPath = String.format("[%s] %s", destDsName, destFilePath);
 
-		ManagedObjectReference morTask = _context.getService().moveDatastoreFileTask(morFileManager,
-			srcFullPath, morSrcDc, destFullPath, morDestDc, forceOverwrite);
+		Task task = _context.getFileManager().moveDatastoreFile_Task(srcFullPath, sourceDatacenter, destFullPath, destinationDatacenter, forceOverwrite);
+		ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(result) {
@@ -307,8 +319,8 @@ public class DatastoreMO extends BaseMO {
 		s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
 		HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
 		if(results != null) {
-			List<FileInfo> info = results.getFile();
-			if(info != null && info.size() > 0) {
+			FileInfo[] info = results.getFile();
+			if(info != null && info.length > 0) {
 				s_logger.info("File " + fileFullPath + " exists on datastore");
 				return true;
 			}
@@ -323,8 +335,8 @@ public class DatastoreMO extends BaseMO {
 
 		HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(folderParentDatastorePath, folderName, true);
 		if(results != null) {
-			List<FileInfo> info = results.getFile();
-			if(info != null && info.size() > 0) {
+			FileInfo[] info = results.getFile();
+			if(info != null && info.length > 0) {
 				s_logger.info("Folder " + folderName + " exists on datastore");
 				return true;
 			}
@@ -351,8 +363,8 @@ public class DatastoreMO extends BaseMO {
             s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
         }
         for (HostDatastoreBrowserSearchResults result : results) {
-            List<FileInfo> info = result.getFile();
-            if (info != null && info.size() > 0) {
+            FileInfo[] info = result.getFile();
+            if (info != null && info.length > 0) {
                 for (FileInfo fi : info) {
                     absoluteFileName = parentFolderPath = result.getFolderPath();
                     s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);

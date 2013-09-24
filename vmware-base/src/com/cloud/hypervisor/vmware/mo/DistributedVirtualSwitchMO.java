@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
@@ -31,37 +32,49 @@ import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.VMwareDVSConfigInfo;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
+import com.vmware.vim25.mo.DistributedVirtualPortgroup;
+import com.vmware.vim25.mo.DistributedVirtualSwitch;
+import com.vmware.vim25.mo.Task;
 
 public class DistributedVirtualSwitchMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(DistributedVirtualSwitchMO.class);
 
+    protected DistributedVirtualSwitch _distributedVirtualSwitch;
+    
     public DistributedVirtualSwitchMO(VmwareContext context, ManagedObjectReference morDvs) {
         super(context, morDvs);
+        _distributedVirtualSwitch = (DistributedVirtualSwitch) this.getManagedEntity();
     }
 
     public DistributedVirtualSwitchMO(VmwareContext context, String morType, String morValue) {
         super(context, morType, morValue);
+        _distributedVirtualSwitch = (DistributedVirtualSwitch) this.getManagedEntity();
     }
 
     public void createDVPortGroup(DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
         List<DVPortgroupConfigSpec> dvPortGroupSpecArray = new ArrayList<DVPortgroupConfigSpec>();
         dvPortGroupSpecArray.add(dvPortGroupSpec);
-        _context.getService().addDVPortgroup_Task(_mor, dvPortGroupSpecArray.toArray(new DVPortgroupConfigSpec[0]));
+        _distributedVirtualSwitch.addDVPortgroup_Task(dvPortGroupSpecArray.toArray(new DVPortgroupConfigSpec[0]));
     }
 
     public void updateDvPortGroup(ManagedObjectReference dvPortGroupMor, DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
         // TODO(sateesh): Update numPorts
-        _context.getService().reconfigureDVPortgroup_Task(dvPortGroupMor, dvPortGroupSpec);
+        DistributedVirtualPortgroup dvPortGroup = new DistributedVirtualPortgroup(_context.getServerConnection(), dvPortGroupMor);
+        dvPortGroup.reconfigureDVPortgroup_Task(dvPortGroupSpec);
     }
 
     public void updateVMWareDVSwitch(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {
-        _context.getService().reconfigureDvs_Task(dvSwitchMor, dvsSpec);
+        // FIXME Why pass in a dvSwitchMor here?
+        DistributedVirtualSwitch dvSwitch = new DistributedVirtualSwitch(_context.getServerConnection(), dvSwitchMor);
+        dvSwitch.reconfigureDvs_Task(dvsSpec);
     }
 
     public TaskInfo updateVMWareDVSwitchGetTask(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {
-        ManagedObjectReference task = _context.getService().reconfigureDvs_Task(dvSwitchMor, dvsSpec);
-        TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
-        boolean waitvalue = _context.getVimClient().waitForTask(task);
+        // FIXME Why pass in a dvSwitchMor here?
+        DistributedVirtualSwitch dvSwitch = new DistributedVirtualSwitch(_context.getServerConnection(), dvSwitchMor);
+        Task task = dvSwitch.reconfigureDvs_Task(dvsSpec);
+        TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task.getMOR(), "info"));
+        _context.getVimClient().waitForTask(task.getMOR());
         return info;
     }
 

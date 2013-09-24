@@ -19,47 +19,52 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitchSpec;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.HostNetworkSystem;
 
 public class HostNetworkSystemMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HostNetworkSystemMO.class);
+    protected HostNetworkSystem _hostNetworkSystem;
     
 	public HostNetworkSystemMO(VmwareContext context, ManagedObjectReference morNetworkSystem) {
 		super(context, morNetworkSystem);
+		_hostNetworkSystem = new HostNetworkSystem(context.getServerConnection(), morNetworkSystem);
 	}
 	
 	public HostNetworkSystemMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_hostNetworkSystem = new HostNetworkSystem(context.getServerConnection(), _mor);
 	}
 	
 	public void addPortGroup(HostPortGroupSpec spec) throws Exception {
-		_context.getService().addPortGroup(_mor, spec);
+		_hostNetworkSystem.addPortGroup(spec);
 	}
 	
 	public void updatePortGroup(String portGroupName, HostPortGroupSpec spec) throws Exception {
-		_context.getService().updatePortGroup(_mor, portGroupName, spec);
+		_hostNetworkSystem.updatePortGroup(portGroupName, spec);
 	}
 	
 	public void removePortGroup(String portGroupName) throws Exception {
-		_context.getService().removePortGroup(_mor, portGroupName);
+		_hostNetworkSystem.removePortGroup(portGroupName);
 	}
 	
 	public void addVirtualSwitch(String vSwitchName, HostVirtualSwitchSpec spec) throws Exception {
-		_context.getService().addVirtualSwitch(_mor, vSwitchName, spec);
+		_hostNetworkSystem.addVirtualSwitch(vSwitchName, spec);
 	}
 	
 	public void updateVirtualSwitch(String vSwitchName, HostVirtualSwitchSpec spec) throws Exception {
-		_context.getService().updateVirtualSwitch(_mor, vSwitchName, spec);
+		_hostNetworkSystem.updateVirtualSwitch(vSwitchName, spec);
 	}
 	
 	public void removeVirtualSwitch(String vSwitchName) throws Exception {
-		_context.getService().removeVirtualSwitch(_mor, vSwitchName);
+		_hostNetworkSystem.removeVirtualSwitch(vSwitchName);
 	}
 	
 	public void refresh() throws Exception {
-		_context.getService().refreshNetworkSystem(_mor);
+		_hostNetworkSystem.refreshNetworkSystem();
 	}
 }
 

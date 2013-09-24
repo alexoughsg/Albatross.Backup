@@ -21,27 +21,34 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.HostDatastoreBrowser;
+import com.vmware.vim25.mo.Task;
 
 public class HostDatastoreBrowserMO extends BaseMO {
 
     private static final Logger s_logger = Logger.getLogger(HostDatastoreBrowserMO.class);
+    
+    protected HostDatastoreBrowser _hostDatastoreBrowser;
 
 	public HostDatastoreBrowserMO(VmwareContext context, ManagedObjectReference morHostDatastoreBrowser) {
 		super(context, morHostDatastoreBrowser);
+		_hostDatastoreBrowser = new HostDatastoreBrowser(context.getServerConnection(), morHostDatastoreBrowser);
 	}
 
 	public HostDatastoreBrowserMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_hostDatastoreBrowser = new HostDatastoreBrowser(context.getServerConnection(), this._mor);
 	}
 
 	public void DeleteFile(String datastoreFullPath) throws Exception {
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getVal() + ", file datastore path: " + datastoreFullPath);
 
-		_context.getService().deleteFile(_mor, datastoreFullPath);
+		_hostDatastoreBrowser.deleteFile(datastoreFullPath);
 
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - deleteFile() done");
@@ -52,7 +59,8 @@ public class HostDatastoreBrowserMO extends BaseMO {
 			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getVal() + ", file datastore path: " + datastorePath);
 
 		try {
-			ManagedObjectReference morTask = _context.getService().searchDatastore_Task(_mor, datastorePath, searchSpec);
+		    Task task = _hostDatastoreBrowser.searchDatastore_Task(datastorePath, searchSpec);
+			ManagedObjectReference morTask = task.getMOR();
 
 			boolean result = _context.getVimClient().waitForTask(morTask);
 			if(result) {
@@ -84,7 +92,8 @@ public class HostDatastoreBrowserMO extends BaseMO {
 			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getVal() + ", file datastore path: " + datastorePath);
 
 		try {
-			ManagedObjectReference morTask = _context.getService().searchDatastoreSubFolders_Task(_mor, datastorePath, searchSpec);
+		    Task task = _hostDatastoreBrowser.searchDatastoreSubFolders_Task(datastorePath, searchSpec);
+			ManagedObjectReference morTask = task.getMOR();
 
 			boolean result = _context.getVimClient().waitForTask(morTask);
 			if(result) {

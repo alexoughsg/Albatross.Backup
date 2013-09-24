@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
@@ -36,15 +37,22 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VmfsDatastoreCreateSpec;
 import com.vmware.vim25.VmfsDatastoreOption;
+import com.vmware.vim25.mo.Datastore;
+import com.vmware.vim25.mo.HostDatastoreSystem;
+import com.vmware.vim25.mo.PropertyCollector;
 
 public class HostDatastoreSystemMO extends BaseMO {
 
+    protected HostDatastoreSystem _hostDatastoreSystem;
+    
 	public HostDatastoreSystemMO(VmwareContext context, ManagedObjectReference morHostDatastore) {
 		super(context, morHostDatastore);
+		_hostDatastoreSystem = new HostDatastoreSystem(context.getServerConnection(), morHostDatastore);
 	}
 
 	public HostDatastoreSystemMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_hostDatastoreSystem = new HostDatastoreSystem(context.getServerConnection(), this._mor);
 	}
 
 	public ManagedObjectReference findDatastore(String name) throws Exception {
@@ -144,31 +152,32 @@ public class HostDatastoreSystemMO extends BaseMO {
 	}
 
 	public HostScsiDisk[] queryAvailableDisksForVmfs() throws Exception {
-		return _context.getService().queryAvailableDisksForVmfs(_mor, null);
+		return _hostDatastoreSystem.queryAvailableDisksForVmfs(null);
 	}
 
-	public ManagedObjectReference createVmfsDatastore(String datastoreName, HostScsiDisk hostScsiDisk) throws Exception {
+	public Datastore createVmfsDatastore(String datastoreName, HostScsiDisk hostScsiDisk) throws Exception {
 		// just grab the first instance of VmfsDatastoreOption
-		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 5)[0];
+		VmfsDatastoreOption vmfsDatastoreOption = _hostDatastoreSystem.queryVmfsDatastoreCreateOptions(hostScsiDisk.getDevicePath(), 5)[0];
 
 		VmfsDatastoreCreateSpec vmfsDatastoreCreateSpec = (VmfsDatastoreCreateSpec)vmfsDatastoreOption.getSpec();
 
 		// set the name of the datastore to be created
 		vmfsDatastoreCreateSpec.getVmfs().setVolumeName(datastoreName);
 
-		return _context.getService().createVmfsDatastore(_mor, vmfsDatastoreCreateSpec);
+		return _hostDatastoreSystem.createVmfsDatastore(vmfsDatastoreCreateSpec);
 	}
 
 	public boolean deleteDatastore(String name) throws Exception {
 		ManagedObjectReference morDatastore = findDatastore(name);
+		Datastore datastore = new Datastore(_context.getServerConnection(), morDatastore);
 		if(morDatastore != null) {
-			_context.getService().removeDatastore(_mor, morDatastore);
+			_hostDatastoreSystem.removeDatastore(datastore);
 			return true;
 		}
 		return false;
 	}
 
-	public ManagedObjectReference createNfsDatastore(String host, int port,
+	public Datastore createNfsDatastore(String host, int port,
 		String exportPath, String uuid) throws Exception {
 
 		HostNasVolumeSpec spec = new HostNasVolumeSpec();
@@ -179,7 +188,7 @@ public class HostDatastoreSystemMO extends BaseMO {
 
 		// readOnly/readWrite
 		spec.setAccessMode("readWrite");
-		return _context.getService().createNasDatastore(_mor, spec);
+		return _hostDatastoreSystem.createNasDatastore(spec);
 	}
 
 	public List<ManagedObjectReference> getDatastores() throws Exception {
@@ -219,8 +228,8 @@ public class HostDatastoreSystemMO extends BaseMO {
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
         List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
         pfSpecArr.add(pfSpec);
-
-	    return _context.getService().retrieveProperties(
-	    	_context.getPropertyCollector(), pfSpecArr.toArray(new PropertyFilterSpec[0]));
+        
+        PropertyCollector pc = _context.getPropertyCollector();
+	    return pc.retrieveProperties(pfSpecArr.toArray(new PropertyFilterSpec[0]));
 	}
 }

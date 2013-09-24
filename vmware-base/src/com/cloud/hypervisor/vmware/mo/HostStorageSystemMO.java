@@ -23,14 +23,19 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HostInternetScsiHbaStaticTarget;
 import com.vmware.vim25.HostStorageDeviceInfo;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.HostStorageSystem;
 
 public class HostStorageSystemMO extends BaseMO {
+    protected HostStorageSystem _hostStorageSystem;
+    
 	public HostStorageSystemMO(VmwareContext context, ManagedObjectReference morHostDatastore) {
 		super(context, morHostDatastore);
+		_hostStorageSystem = new HostStorageSystem(context.getServerConnection(), morHostDatastore);
 	}
 
 	public HostStorageSystemMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_hostStorageSystem = new HostStorageSystem(context.getServerConnection(), _mor);
 	}
 	
 	public HostStorageDeviceInfo getStorageDeviceInfo() throws Exception {
@@ -38,18 +43,18 @@ public class HostStorageSystemMO extends BaseMO {
 	}
 	
 	public void addInternetScsiStaticTargets(String iScsiHbaDevice, List<HostInternetScsiHbaStaticTarget> lstTargets) throws Exception {
-		_context.getService().addInternetScsiStaticTargets(_mor, iScsiHbaDevice, lstTargets.toArray(new HostInternetScsiHbaStaticTarget[0]));
+		_hostStorageSystem.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets.toArray(new HostInternetScsiHbaStaticTarget[0]));
 	}
 	
 	public void removeInternetScsiStaticTargets(String iScsiHbaDevice, List<HostInternetScsiHbaStaticTarget> lstTargets) throws Exception {
-		_context.getService().removeInternetScsiStaticTargets(_mor, iScsiHbaDevice, lstTargets.toArray(new HostInternetScsiHbaStaticTarget[0]));
+		_hostStorageSystem.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets.toArray(new HostInternetScsiHbaStaticTarget[0]));
 	}
 	
 	public void rescanHba(String iScsiHbaDevice) throws Exception {
-		_context.getService().rescanHba(_mor, iScsiHbaDevice);
+		_hostStorageSystem.rescanHba(iScsiHbaDevice);
 	}
 
     public void rescanVmfs() throws Exception {
-        _context.getService().rescanVmfs(_mor);
+        _hostStorageSystem.rescanVmfs();
     }
 }

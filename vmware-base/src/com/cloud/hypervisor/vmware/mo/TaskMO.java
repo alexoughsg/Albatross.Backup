@@ -17,19 +17,28 @@
 package com.cloud.hypervisor.vmware.mo;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.LocalizableMessage;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
+import com.vmware.vim25.mo.Task;
 
 public class TaskMO extends BaseMO {
+    private Task task;
+    
     public TaskMO(VmwareContext context, ManagedObjectReference morTask) {
         super(context, morTask);
+        task = new Task(context.getServerConnection(), morTask);
     }
 
     public TaskMO(VmwareContext context, String morType, String morValue) {
         super(context, morType, morValue);
+        ManagedObjectReference morTask = new ManagedObjectReference();
+        morTask.setType(morType);
+        morTask.setVal(morValue);
+        task = new Task(context.getServerConnection(), morTask);
     }
 
     public TaskInfo getTaskInfo() throws Exception {
@@ -37,19 +46,19 @@ public class TaskMO extends BaseMO {
     }
 
     public void setTaskDescription(LocalizableMessage description) throws Exception {
-    	_context.getService().setTaskDescription(_mor, description);
+        task.setTaskDescription(description);
     }
 
     public void setTaskState(TaskInfoState state, Object result, LocalizedMethodFault fault) throws Exception {
-    	_context.getService().setTaskState(_mor, state, result, fault);
+        task.setTaskState(state, result, fault);
     }
 
     public void updateProgress(int percentDone) throws Exception {
-    	_context.getService().updateProgress(_mor, percentDone);
+        task.updateProgress(percentDone);
     }
 
     public void cancelTask() throws Exception {
-    	_context.getService().cancelTask(_mor);
+        task.cancelTask();
     }
 
     public static String getTaskFailureInfo(VmwareContext context, ManagedObjectReference morTask) {

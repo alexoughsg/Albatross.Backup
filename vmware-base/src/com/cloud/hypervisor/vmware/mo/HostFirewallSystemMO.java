@@ -19,19 +19,25 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.HostFirewallDefaultPolicy;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.HostFirewallSystem;
 
 public class HostFirewallSystemMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HostFirewallSystemMO.class);
+    
+    protected HostFirewallSystem _hostFirewallSystem;
 
 	public HostFirewallSystemMO(VmwareContext context, ManagedObjectReference morFirewallSystem) {
 		super(context, morFirewallSystem);
+		_hostFirewallSystem = new HostFirewallSystem(context.getServerConnection(), morFirewallSystem);
 	}
 
 	public HostFirewallSystemMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_hostFirewallSystem = new HostFirewallSystem(context.getServerConnection(), this._mor);
 	}
 
 	public HostFirewallInfo getFirewallInfo() throws Exception {
@@ -39,18 +45,18 @@ public class HostFirewallSystemMO extends BaseMO {
 	}
 
 	public void updateDefaultPolicy(HostFirewallDefaultPolicy policy) throws Exception {
-		_context.getService().updateDefaultPolicy(_mor, policy);
+		_hostFirewallSystem.updateDefaultPolicy(policy);
 	}
 
 	public void enableRuleset(String rulesetName) throws Exception {
-		_context.getService().enableRuleset(_mor, rulesetName);
+		_hostFirewallSystem.enableRuleset(rulesetName);
 	}
 
 	public void disableRuleset(String rulesetName) throws Exception {
-		_context.getService().disableRuleset(_mor, rulesetName);
+		_hostFirewallSystem.disableRuleset(rulesetName);
 	}
 
 	public void refreshFirewall() throws Exception {
-		_context.getService().refreshFirewall(_mor);
+		_hostFirewallSystem.refreshFirewall();
 	}
 }

@@ -25,8 +25,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
+import com.vmware.vim25.AlreadyExists;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;
@@ -64,6 +66,10 @@ import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
+import com.vmware.vim25.mo.HostSystem;
+import com.vmware.vim25.mo.HttpNfcLease;
+import com.vmware.vim25.mo.OvfManager;
+import com.vmware.vim25.mo.ResourcePool;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -96,7 +102,7 @@ public class HypervisorHostHelper {
             for(ObjectContent oc : ocs) {
                 String vmNameInvCenter = null;
                 String vmInternalCSName = null;
-                List<DynamicProperty> objProps = oc.getPropSet();
+                DynamicProperty[] objProps = oc.getPropSet();
 		        if(objProps != null) {
 		            for(DynamicProperty objProp : objProps) {
 		                if(objProp.getName().equals("name")) {
@@ -130,7 +136,7 @@ public class HypervisorHostHelper {
         ObjectContent[] ocs = hyperHost.getDatastorePropertiesOnHyperHost(new String[] { "name"} );
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
-                List<DynamicProperty> objProps = oc.getPropSet();
+                DynamicProperty[] objProps = oc.getPropSet();
                 if(objProps != null) {
                     for(DynamicProperty objProp : objProps) {
                         if(objProp.getVal().toString().equals(datastoreName))
@@ -652,14 +658,16 @@ public class HypervisorHostHelper {
         // Next, add the required primary and secondary vlan config specs to the dvs config spec.
         if (!vlanmap.containsKey(vid)) {
             VMwareDVSPvlanConfigSpec ppvlanConfigSpec = createDVPortPvlanConfigSpec(vid, vid, PvlanType.promiscuous, PvlanOperation.add);
-            dvsSpec.getPvlanConfigSpec().add(ppvlanConfigSpec);
+            dvsSpec.setPvlanConfigSpec(
+                    (VMwareDVSPvlanConfigSpec[]) ArrayUtils.add(dvsSpec.getPvlanConfigSpec(), ppvlanConfigSpec));
         }
         if ( !vid.equals(spvlanid) && !vlanmap.containsKey(spvlanid)) {
             VMwareDVSPvlanConfigSpec spvlanConfigSpec = createDVPortPvlanConfigSpec(vid, spvlanid, PvlanType.isolated, PvlanOperation.add);
-            dvsSpec.getPvlanConfigSpec().add(spvlanConfigSpec);
+            dvsSpec.setPvlanConfigSpec(
+                    (VMwareDVSPvlanConfigSpec[]) ArrayUtils.add(dvsSpec.getPvlanConfigSpec(), spvlanConfigSpec));
         }
 
-        if (dvsSpec.getPvlanConfigSpec().size() > 0) {
+        if (dvsSpec.getPvlanConfigSpec().length > 0) {
             // We have something to configure on the DVS... so send it the command.
             // When reconfiguring a vmware DVSwitch, we need to send in the configVersion in the spec.
             // Let's retrieve this switch's configVersion first.
@@ -669,7 +677,7 @@ public class HypervisorHostHelper {
             // Reconfigure the dvs using this spec.
             try {
                 dvSwitchMo.updateVMWareDVSwitchGetTask(morDvSwitch, dvsSpec);
-            } catch (AlreadyExistsFaultMsg e) {
+            } catch (AlreadyExists e) {
                 s_logger.info("Specified vlan id (" + vid + ") private vlan id (" + spvlanid + ") tuple already configured on VMWare DVSwitch");
                 // Do nothing, good if the tuple's already configured on the dvswitch.
             } catch (Exception e) {
@@ -1006,14 +1014,14 @@ public class HypervisorHostHelper {
             ManagedObjectReference morParent = hostMo.getParentMor();
             if(morParent != null && morParent.getType().equals("ClusterComputeResource")) {
                 // to be conservative, lock cluster
-                GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.getValue());
+                GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.getVal());
                 try {
                     if(lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
                         try {
                             List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)hostMo.getContext().getVimClient().getDynamicProperty(morParent, "host");
                             if(hosts != null) {
                                 for(ManagedObjectReference otherHost: hosts) {
-                                    if(!otherHost.getValue().equals(hostMo.getMor().getValue())) {
+                                    if(!otherHost.getVal().equals(hostMo.getMor().getVal())) {
                                         HostMO otherHostMo = new HostMO(hostMo.getContext(), otherHost);
                                         try {
                                             if(s_logger.isDebugEnabled())
@@ -1063,7 +1071,7 @@ public class HypervisorHostHelper {
             return true;
 
         // so far policyInSpec and shapingPolicy should both not be null
-        if(policyInSpec.isEnabled() == null || !policyInSpec.isEnabled().booleanValue())
+        if(policyInSpec.getEnabled() == null || !policyInSpec.getEnabled().booleanValue())
             return false;
 
         if(policyInSpec.getAverageBandwidth() == null || policyInSpec.getAverageBandwidth().longValue() != shapingPolicy.getAverageBandwidth().longValue())
@@ -1154,12 +1162,12 @@ public class HypervisorHostHelper {
 
         // Scsi controller
         VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
-        scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
+        scsiController.setSharedBus(VirtualSCSISharing.noSharing);
         scsiController.setBusNumber(0);
         scsiController.setKey(1);
         VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
         scsiControllerSpec.setDevice(scsiController);
-        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
 
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
         DatastoreMO dsMo = new DatastoreMO(host.getContext(), morDs);
@@ -1172,10 +1180,9 @@ public class HypervisorHostHelper {
 
         VirtualDeviceConfigSpec videoDeviceSpec = new VirtualDeviceConfigSpec();
         videoDeviceSpec.setDevice(videoCard);
-        videoDeviceSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        videoDeviceSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
 
-        vmConfig.getDeviceChange().add(scsiControllerSpec);
-        vmConfig.getDeviceChange().add(videoDeviceSpec);
+        vmConfig.setDeviceChange(new VirtualDeviceConfigSpec[] { scsiControllerSpec, videoDeviceSpec});
         if(host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where
@@ -1218,20 +1225,20 @@ public class HypervisorHostHelper {
         vmConfig.setName(vmName);
         vmConfig.setMemoryMB((long) 4);
         vmConfig.setNumCPUs(1);
-        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
+        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.otherGuest.toString());
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
         fileInfo.setVmPathName(dsMo.getDatastoreRootPath());
         vmConfig.setFiles(fileInfo);
 
         VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
-        scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
+        scsiController.setSharedBus(VirtualSCSISharing.noSharing);
         scsiController.setBusNumber(0);
         scsiController.setKey(1);
         VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
         scsiControllerSpec.setDevice(scsiController);
-        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
 
-        vmConfig.getDeviceChange().add(scsiControllerSpec);
+        vmConfig.setDeviceChange( new VirtualDeviceConfigSpec[] { scsiControllerSpec });
         if(hyperHost.createVm(vmConfig)) {
         	// Ugly work-around, it takes time for newly created VM to appear
         	for(int i = 0; i < 10 && workingVM == null; i++) {
@@ -1320,9 +1327,12 @@ public class HypervisorHostHelper {
 
         String ovfDescriptor = HttpNfcLeaseMO.readOvfContent(ovfFilePath);
         VmwareContext context = host.getContext();
-        OvfCreateImportSpecResult ovfImportResult = context.getService().createImportSpec(
-                context.getServiceContent().getOvfManager(), ovfDescriptor, morRp,
-                dsMo.getMor(), importSpecParams);
+        ResourcePool resourcePool = new ResourcePool(context.getServerConnection(), morRp);
+        HostSystem hostSystem = new HostSystem(context.getServerConnection(), morHost);
+        OvfManager ovfManager = context.getOvfManager();
+
+        OvfCreateImportSpecResult ovfImportResult = ovfManager.createImportSpec(ovfDescriptor, resourcePool,
+                dsMo._datastore, importSpecParams);
 
         if(ovfImportResult == null) {
             String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath + ", vmName: "
@@ -1332,8 +1342,8 @@ public class HypervisorHostHelper {
         }
 
         DatacenterMO dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());
-        ManagedObjectReference morLease = context.getService().importVApp(morRp,
-                ovfImportResult.getImportSpec(), dcMo.getVmFolder(), morHost);
+        HttpNfcLease lease = resourcePool.importVApp(ovfImportResult.getImportSpec(), dcMo._datacenter.getVmFolder(), hostSystem);
+        ManagedObjectReference morLease = lease.getMOR();
         if(morLease == null) {
             String msg = "importVApp() failed. ovfFilePath: " + ovfFilePath + ", vmName: "
                     + vmName + ", diskOption: " + diskOption;
@@ -1343,14 +1353,14 @@ public class HypervisorHostHelper {
         boolean importSuccess = true;
         final HttpNfcLeaseMO leaseMo = new HttpNfcLeaseMO(context, morLease);
         HttpNfcLeaseState state = leaseMo.waitState(
-                new HttpNfcLeaseState[] { HttpNfcLeaseState.READY, HttpNfcLeaseState.ERROR });
+                new HttpNfcLeaseState[] { HttpNfcLeaseState.ready, HttpNfcLeaseState.error });
         try {
-            if(state == HttpNfcLeaseState.READY) {
+            if(state == HttpNfcLeaseState.ready) {
                 final long totalBytes = HttpNfcLeaseMO.calcTotalBytes(ovfImportResult);
                 File ovfFile = new File(ovfFilePath);
 
                 HttpNfcLeaseInfo httpNfcLeaseInfo = leaseMo.getLeaseInfo();
-                List<HttpNfcLeaseDeviceUrl> deviceUrls = httpNfcLeaseInfo.getDeviceUrl();
+                HttpNfcLeaseDeviceUrl[] deviceUrls = httpNfcLeaseInfo.getDeviceUrl();
                 long bytesAlreadyWritten = 0;
 
                 final HttpNfcLeaseMO.ProgressReporter progressReporter = leaseMo.createProgressReporter();

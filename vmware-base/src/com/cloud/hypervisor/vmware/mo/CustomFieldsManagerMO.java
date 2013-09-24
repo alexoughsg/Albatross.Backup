@@ -19,35 +19,42 @@ package com.cloud.hypervisor.vmware.mo;
 import java.util.List;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.PrivilegePolicyDef;
+import com.vmware.vim25.mo.CustomFieldsManager;
+import com.vmware.vim25.mo.ManagedEntity;
 
 public class CustomFieldsManagerMO extends BaseMO {
+    private CustomFieldsManager _customFieldsManager;
 
 	public CustomFieldsManagerMO(VmwareContext context, ManagedObjectReference mor) {
 		super(context, mor);
+		_customFieldsManager = new CustomFieldsManager(context.getServerConnection(), mor); 
 	}
 
 	public CustomFieldsManagerMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_customFieldsManager = new CustomFieldsManager(context.getServerConnection(), _mor);
 	}
 
 	public CustomFieldDef addCustomerFieldDef(String fieldName, String morType,
 		PrivilegePolicyDef fieldDefPolicy, PrivilegePolicyDef fieldPolicy) throws Exception {
-		return _context.getService().addCustomFieldDef(getMor(), fieldName, morType, fieldDefPolicy, fieldPolicy);
+		return _customFieldsManager.addCustomFieldDef(fieldName, morType, fieldDefPolicy, fieldPolicy);
 	}
 
 	public void removeCustomFieldDef(int key) throws Exception {
-		_context.getService().removeCustomFieldDef(getMor(), key);
+		_customFieldsManager.removeCustomFieldDef(key);
 	}
 
 	public void renameCustomFieldDef(int key, String name) throws Exception {
-		_context.getService().renameCustomFieldDef(getMor(), key, name);
+		_customFieldsManager.renameCustomFieldDef(key, name);
 	}
 
 	public void setField(ManagedObjectReference morEntity, int key, String value) throws Exception {
-		_context.getService().setField(getMor(), morEntity, key, value);
+	    ManagedEntity managedEntity = new ManagedEntity(_context.getServerConnection(), morEntity);
+		_customFieldsManager.setField(managedEntity, key, value);
 	}
 
 	public List<CustomFieldDef> getFields() throws Exception {

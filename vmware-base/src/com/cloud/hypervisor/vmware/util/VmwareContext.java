@@ -44,6 +44,7 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.utils.ActionDelegate;
 
+import com.vmware.vim25.DvsMergedEvent;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
@@ -53,7 +54,12 @@ import com.vmware.vim25.ServiceContent;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.mo.DistributedVirtualSwitchManager;
+import com.vmware.vim25.mo.FileManager;
+import com.vmware.vim25.mo.OvfManager;
+import com.vmware.vim25.mo.PerformanceManager;
 import com.vmware.vim25.mo.PropertyCollector;
+import com.vmware.vim25.mo.ServerConnection;
 
 public class VmwareContext {
     private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
@@ -137,9 +143,33 @@ public class VmwareContext {
 	public ServiceContent getServiceContent() {
 		return _vimClient.getServiceContent();
 	}
-
-	public ManagedObjectReference getPropertyCollector(){
+	
+	public PropertyCollector getPropertyCollector() {
+	    return _vimClient.getServiceInstance().getPropertyCollector();
+	}
+	
+	public FileManager getFileManager() {
+	    return _vimClient.getServiceInstance().getFileManager();
+	}
+	
+	public OvfManager getOvfManager() {
+	    return _vimClient.getServiceInstance().getOvfManager();
+	}
+	
+	public DistributedVirtualSwitchManager getDistributedVirtualSwitchManager() {
+	    return _vimClient.getServiceInstance().getDistributedVirtualSwitchManager();
+	}
+	
+	public PerformanceManager getPerformanceManager() {
+	    return _vimClient.getServiceInstance().getPerformanceManager();
+	}
+	
+	public ManagedObjectReference getPropertyCollectorMor(){
 	    return _vimClient.getPropCol();
+	}
+	
+	public ServerConnection getServerConnection() {
+	    return _vimClient.getServiceInstance().getServerConnection();
 	}
 
 	public ManagedObjectReference getRootFolder() {

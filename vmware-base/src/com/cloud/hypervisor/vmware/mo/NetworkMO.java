@@ -19,19 +19,28 @@ package com.cloud.hypervisor.vmware.mo;
 import java.util.List;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.Network;
 
 public class NetworkMO extends BaseMO {
+    private Network network;
+    
     public NetworkMO(VmwareContext context, ManagedObjectReference morCluster) {
         super(context, morCluster);
+        network = new Network(context.getServerConnection(), morCluster);
     }
 
     public NetworkMO(VmwareContext context, String morType, String morValue) {
         super(context, morType, morValue);
+        ManagedObjectReference networkMor = new ManagedObjectReference();
+        networkMor.setType(morType);
+        networkMor.setVal(morValue);
+        network = new Network(context.getServerConnection(), networkMor);
     }
 
     public void destroyNetwork() throws Exception {
-        _context.getService().destroyNetwork(_mor);
+        network.destroyNetwork();
     }
 
     public List<ManagedObjectReference> getVMsOnNetwork() throws Exception {

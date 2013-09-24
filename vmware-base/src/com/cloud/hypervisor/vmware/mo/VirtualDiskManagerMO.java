@@ -19,12 +19,17 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.HostDiskDimensionsChs;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDiskSpec;
+import com.vmware.vim25.mo.Datacenter;
+import com.vmware.vim25.mo.Task;
+import com.vmware.vim25.mo.VirtualDiskManager;
 
 public class VirtualDiskManagerMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualDiskManagerMO.class);
+    protected VirtualDiskManager _virtualDiskManager;
 
     public VirtualDiskManagerMO(VmwareContext context) {
             super(context, context.getServiceContent().getVirtualDiskManager());
@@ -41,8 +46,11 @@ public class VirtualDiskManagerMO extends BaseMO {
     public void copyVirtualDisk(String srcName, ManagedObjectReference morSrcDc,
     	String destName, ManagedObjectReference morDestDc, VirtualDiskSpec diskSpec,
     	boolean force) throws Exception {
+        Datacenter sourceDatacenter = new Datacenter(_context.getServerConnection(), morSrcDc);
+        Datacenter destinationDatacenter = new Datacenter(_context.getServerConnection(), morDestDc);
 
-    	ManagedObjectReference morTask = _context.getService().copyVirtualDisk_Task(_mor, srcName, morSrcDc, destName, morDestDc, diskSpec, force);
+        Task task = _virtualDiskManager.copyVirtualDisk_Task(srcName, sourceDatacenter, destName, destinationDatacenter, diskSpec, force);
+    	ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -53,7 +61,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void createVirtualDisk(String name, ManagedObjectReference morDc, VirtualDiskSpec diskSpec) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().createVirtualDisk_Task(_mor, name, morDc, diskSpec);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.createVirtualDisk_Task(name, datacenter, diskSpec);
+    	ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -64,7 +74,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void defragmentVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().defragmentVirtualDisk_Task(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.defragmentVirtualDisk_Task(name, datacenter);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -74,7 +86,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void deleteVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().deleteVirtualDisk_Task(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.deleteVirtualDisk_Task(name, datacenter);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -84,7 +98,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void eagerZeroVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().eagerZeroVirtualDisk_Task(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.eagerZeroVirtualDisk_Task(name, datacenter);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -94,7 +110,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void extendVirtualDisk(String name, ManagedObjectReference morDc, long newCapacityKb, boolean eagerZero) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().extendVirtualDisk_Task(_mor, name, morDc, newCapacityKb, eagerZero);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.extendVirtualDisk_Task(name, datacenter, newCapacityKb, eagerZero);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -104,7 +122,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void inflateVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().inflateVirtualDisk_Task(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.inflateVirtualDisk_Task(name, datacenter);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -113,7 +133,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void shrinkVirtualDisk(String name, ManagedObjectReference morDc, boolean copy) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().shrinkVirtualDisk_Task(_mor, name, morDc, copy);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.shrinkVirtualDisk_Task(name, datacenter, copy);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -122,7 +144,9 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void zeroFillVirtualDisk(String name, ManagedObjectReference morDc) throws Exception {
-    	ManagedObjectReference morTask = _context.getService().zeroFillVirtualDisk_Task(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);
+        Task task = _virtualDiskManager.zeroFillVirtualDisk_Task(name, datacenter);
+        ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -132,9 +156,11 @@ public class VirtualDiskManagerMO extends BaseMO {
 
     public void moveVirtualDisk(String srcName, ManagedObjectReference morSrcDc,
     	String destName, ManagedObjectReference morDestDc, boolean force) throws Exception {
-
-    	ManagedObjectReference morTask = _context.getService().moveVirtualDisk_Task(_mor, srcName, morSrcDc,
-    		destName, morDestDc, force);
+        Datacenter sourceDatacenter = new Datacenter(_context.getServerConnection(), morSrcDc);
+        Datacenter destinationDatacenter = new Datacenter(_context.getServerConnection(), morDestDc);
+        Task task = _virtualDiskManager.moveVirtualDisk_Task(srcName, sourceDatacenter, destName, destinationDatacenter, force);
+                
+    	ManagedObjectReference morTask = task.getMOR();
 
 		boolean result = _context.getVimClient().waitForTask(morTask);
 		if(!result)
@@ -144,18 +170,22 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public int queryVirtualDiskFragmentation(String name, ManagedObjectReference morDc) throws Exception {
-    	return _context.getService().queryVirtualDiskFragmentation(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);        
+    	return _virtualDiskManager.queryVirtualDiskFragmentation(name, datacenter);
     }
 
     public HostDiskDimensionsChs queryVirtualDiskGeometry(String name, ManagedObjectReference morDc) throws Exception {
-    	return _context.getService().queryVirtualDiskGeometry(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);        
+        return _virtualDiskManager.queryVirtualDiskGeometry(name, datacenter);
     }
 
     public String queryVirtualDiskUuid(String name, ManagedObjectReference morDc) throws Exception {
-    	return _context.getService().queryVirtualDiskUuid(_mor, name, morDc);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);        
+        return _virtualDiskManager.queryVirtualDiskUuid(name, datacenter);
     }
 
     public void setVirtualDiskUuid(String name, ManagedObjectReference morDc, String uuid) throws Exception {
-    	_context.getService().setVirtualDiskUuid(_mor, name, morDc, uuid);
+        Datacenter datacenter = new Datacenter(_context.getServerConnection(), morDc);        
+        _virtualDiskManager.setVirtualDiskUuid(name, datacenter, uuid);
     }
 }

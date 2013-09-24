@@ -110,6 +110,10 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import com.vmware.vim25.mo.DistributedVirtualSwitch;
+import com.vmware.vim25.mo.DistributedVirtualSwitchManager;
+import com.vmware.vim25.mo.HostSystem;
+import com.vmware.vim25.mo.Task;
 
 import org.apache.cloudstack.engine.orchestration.VolumeOrchestrator;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -3018,10 +3022,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
             
-        	ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();
-            ManagedObjectReference computeMor = context.getVimClient().getMoRefProp(hostMor, "parent");
-            ManagedObjectReference environmentBrowser = context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
-            HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
+            com.vmware.vim25.mo.VirtualMachine vm = (com.vmware.vim25.mo.VirtualMachine) vmMo.getManagedEntity();
+            HostSystem host = new HostSystem(context.getServerConnection(), vm.getRuntime().getHost());
+            HostCapability hostCapability = vm.getEnvironmentBrowser().queryTargetCapabilities(host);
             Boolean nestedHvSupported = hostCapability.getNestedHVSupported();
             if (nestedHvSupported == null) {
                 // nestedHvEnabled property is supported only since VMware 5.1. It's not defined for earlier versions.
@@ -3111,15 +3114,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     s_logger.debug("NIC " + nicTo.toString() + " is connected to dvSwitch " + dvSwitchUuid + " pg " + portGroupKey + " port " + portKey);
 
-                    ManagedObjectReference dvSwitchManager = vmMo.getContext().getVimClient().getServiceContent().getDvSwitchManager();
-                    ManagedObjectReference dvSwitch = vmMo.getContext().getVimClient().getService().queryDvsByUuid(dvSwitchManager, dvSwitchUuid);
+                    DistributedVirtualSwitchManager dvsManager = vmMo.getContext().getDistributedVirtualSwitchManager();
+                    DistributedVirtualSwitch dvSwitch = dvsManager.queryDvsByUuid(dvSwitchUuid);
 
                     // Get all ports
                     DistributedVirtualSwitchPortCriteria criteria = new DistributedVirtualSwitchPortCriteria();
                     criteria.setInside(true);
                     String[] portGroupKeys = (String[]) ArrayUtils.add(criteria.getPortgroupKey(), portGroupKey);
                     criteria.setPortgroupKey(portGroupKeys);
-                    DistributedVirtualPort[] dvPorts = vmMo.getContext().getVimClient().getService().fetchDVPorts(dvSwitch, criteria);
+                    DistributedVirtualPort[] dvPorts = dvSwitch.fetchDVPorts(criteria);
 
                     DistributedVirtualPort vmDvPort = null;
                     List<Integer> usedVlans = new ArrayList<Integer>();
@@ -3174,8 +3177,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         dvPortConfigSpec.setKey(portKey);
                         List<DVPortConfigSpec> dvPortConfigSpecs = new ArrayList<DVPortConfigSpec>();
                         dvPortConfigSpecs.add(dvPortConfigSpec);
-                        ManagedObjectReference task = vmMo.getContext().getVimClient().getService().reconfigureDVPort_Task(dvSwitch, dvPortConfigSpecs.toArray(new DVPortConfigSpec[0]));
-                        if (!vmMo.getContext().getVimClient().waitForTask(task)) {
+                        Task task = dvSwitch.reconfigureDVPort_Task(dvPortConfigSpecs.toArray(new DVPortConfigSpec[0]));
+                        if (!vmMo.getContext().getVimClient().waitForTask(task.getMOR())) {
                             throw new Exception(
                                     "Failed to configure the dvSwitch port for nic "
                                             + nicTo.toString());
@@ -4352,8 +4355,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VmwareManager mgr = dcMo.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-        List<ObjectContent> ocs = dcMo.getHostPropertiesOnDatacenterHostFolder(new String[] { "name", "parent" });
-        if (ocs != null && ocs.size() > 0) {
+        ObjectContent[] ocs = dcMo.getHostPropertiesOnDatacenterHostFolder(new String[] { "name", "parent" });
+        if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 HostMO hostMo = new HostMO(dcMo.getContext(), oc.getObj());
                 VmwareHypervisorHostNetworkSummary netSummary = hostMo.getHyperHostNetworkSummary(mgr.getManagementPortGroupByHost(hostMo));
@@ -4738,7 +4741,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         rescanAllHosts(lstHosts);
 
         HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
-        List<HostScsiDisk> lstHostScsiDisks = hostDatastoreSystem.queryAvailableDisksForVmfs();
+        List<HostScsiDisk> lstHostScsiDisks = Arrays.asList(hostDatastoreSystem.queryAvailableDisksForVmfs()); 
 
         HostScsiDisk hostScsiDisk = getHostScsiDisk(hostStorageSystem.getStorageDeviceInfo().getScsiTopology(), lstHostScsiDisks, iqn);
 
@@ -4753,7 +4756,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             throw new Exception("A relevant SCSI disk could not be located to use to create a datastore.");
         }
 
-        morDs = hostDatastoreSystem.createVmfsDatastore(datastoreName, hostScsiDisk);
+        morDs = hostDatastoreSystem.createVmfsDatastore(datastoreName, hostScsiDisk).getMOR();
 
         if (morDs != null) {
             rescanAllHosts(lstHosts);
@@ -5274,9 +5277,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            com.vmware.vim25.mo.VirtualMachine vm = (com.vmware.vim25.mo.VirtualMachine) vmMo.getManagedEntity();
             if (vmMo != null) {
                 try {
-                    context.getService().unregisterVM(vmMo.getMor());
+                    vm.unregisterVM();
                     return new Answer(cmd, true, "unregister succeeded");
                 } catch(Exception e) {
                     s_logger.warn("We are not able to unregister VM " + VmwareHelper.getExceptionMessage(e));
@@ -6269,7 +6273,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<String, VmStatsEntry>();
         ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
-        VimPortType service = getServiceContext().getService();
         PerfCounterInfo rxPerfCounterInfo = null;
         PerfCounterInfo txPerfCounterInfo = null;
 
@@ -6331,7 +6334,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     ArrayList<PerfMetricId> vmNetworkMetrics = new ArrayList<PerfMetricId>();
                     // get all the metrics from the available sample period
                     // FIXME: Is 0 the correct replacement of null here?
-                    PerfMetricId[] perfMetrics = service.queryAvailablePerfMetric(perfMgr, vmMor, null, null, 0);
+                    com.vmware.vim25.mo.VirtualMachine vm = (com.vmware.vim25.mo.VirtualMachine) vmMo.getManagedEntity();
+                    PerfMetricId[] perfMetrics = hyperHost.getContext().getPerformanceManager().queryAvailablePerfMetric(vm, null, null, 0);
                     if(perfMetrics != null) {
                         for(int index=0; index < perfMetrics.length; ++index) {
                             if ( ((rxPerfCounterInfo != null) && (perfMetrics[index].getCounterId() == rxPerfCounterInfo.getKey())) ||
@@ -6352,7 +6356,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         qSpec.setMetricId(availableMetricIds);
                         List<PerfQuerySpec> qSpecs = new ArrayList<PerfQuerySpec>();
                         qSpecs.add(qSpec);
-                        PerfEntityMetricBase[] values = service.queryPerf(perfMgr, qSpecs.toArray(new PerfQuerySpec[0]));
+                        PerfEntityMetricBase[] values = hyperHost.getContext().getPerformanceManager().queryPerf(qSpecs.toArray(new PerfQuerySpec[0]));
 
                         for(int i=0; i<values.length; ++i) {
                             PerfSampleInfo[]  infos = ((PerfEntityMetric) values[i]).getSampleInfo();

@@ -42,6 +42,7 @@ import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.ClusterComputeResource;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
@@ -454,8 +455,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             hostSpec.setPassword(password);
             hostSpec.setHostName(host);
             hostSpec.setForce(true);		// forcely take over the host
-
-            ManagedObjectReference morTask = serviceContext.getService().addHost_Task(morCluster, hostSpec, true, null, null);
+            ClusterComputeResource cluster = new ClusterComputeResource(serviceContext.getServerConnection(), morCluster);
+            ManagedObjectReference morTask = cluster.addHost_Task(hostSpec, true, null, null).getMOR();
             boolean taskResult = vclient.waitForTask(morTask);
             if(!taskResult) {
                 s_logger.error("Unable to add host " + host + " to vSphere cluster due to " + TaskMO.getTaskFailureInfo(serviceContext, morTask));

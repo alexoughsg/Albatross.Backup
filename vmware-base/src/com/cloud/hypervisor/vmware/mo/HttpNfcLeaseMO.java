@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseManifestEntry;
 import com.vmware.vim25.HttpNfcLeaseState;
@@ -37,16 +38,21 @@ import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.mo.HttpNfcLease;
 
 public class HttpNfcLeaseMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HttpNfcLeaseMO.class);
+    
+    protected HttpNfcLease _httpNfcLease;
 
 	public HttpNfcLeaseMO(VmwareContext context, ManagedObjectReference morHttpNfcLease) {
 		super(context, morHttpNfcLease);
+		_httpNfcLease = new HttpNfcLease(context.getServerConnection(), morHttpNfcLease);
 	}
 
 	public HttpNfcLeaseMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+		_httpNfcLease = new HttpNfcLease(context.getServerConnection(), _mor);
 	}
 
 	public HttpNfcLeaseState getState() throws Exception {
@@ -84,15 +90,15 @@ public class HttpNfcLeaseMO extends BaseMO {
 	}
 
 	public HttpNfcLeaseManifestEntry[] getLeaseManifest() throws Exception {
-		return _context.getService().httpNfcLeaseGetManifest(_mor);
+		return _httpNfcLease.httpNfcLeaseGetManifest();
 	}
 
 	public void completeLease() throws Exception {
-		_context.getService().httpNfcLeaseComplete(_mor);
+		_httpNfcLease.httpNfcLeaseComplete();
 	}
 
 	public void abortLease() throws Exception {
-		_context.getService().httpNfcLeaseAbort(_mor, null);
+		_httpNfcLease.httpNfcLeaseAbort(null);
 	}
 
 	public void updateLeaseProgress(int percent) throws Exception {
@@ -102,7 +108,7 @@ public class HttpNfcLeaseMO extends BaseMO {
 		else if(percent > 100)
 			percent = 100;
 
-		_context.getService().httpNfcLeaseProgress(_mor, percent);
+		_httpNfcLease.httpNfcLeaseProgress(percent);
 	}
 
 	public ProgressReporter createProgressReporter() {

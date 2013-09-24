@@ -25,6 +25,7 @@ import com.vmware.vim25.KeyValue;
 import com.vmware.vim25.LicenseAssignmentManagerLicenseAssignment;
 import com.vmware.vim25.LicenseManagerLicenseInfo;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.LicenseAssignmentManager;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
@@ -35,17 +36,21 @@ public class LicenseAssignmentManagerMO extends BaseMO {
     private static final String LICENSE_INFO_PRODUCT_NAME = "ProductName";
     private static final String LICENSE_INFO_NAME = "Name";
     private static final String LICENSE_INFO_FEATURE = "feature";
+    
+    protected LicenseAssignmentManager _licenseAssingnmentManager;
 
     public LicenseAssignmentManagerMO(VmwareContext context, ManagedObjectReference mor) {
         super(context, mor);
+        _licenseAssingnmentManager = new LicenseAssignmentManager(context.getServerConnection(), mor);
     }
 
     public LicenseAssignmentManagerMO(VmwareContext context, String morType, String morValue) {
         super(context, morType, morValue);
+        _licenseAssingnmentManager = new LicenseAssignmentManager(context.getServerConnection(), _mor);
     }
 
     public LicenseAssignmentManagerLicenseAssignment getAssignedLicenseToHost(ManagedObjectReference hostMor) throws Exception {
-        LicenseAssignmentManagerLicenseAssignment[] licenses = _context.getVimClient().getService().queryAssignedLicenses(_mor, hostMor.getVal());
+        LicenseAssignmentManagerLicenseAssignment[] licenses = _licenseAssingnmentManager.queryAssignedLicenses(hostMor.getVal());
         return licenses[0];
     }
 

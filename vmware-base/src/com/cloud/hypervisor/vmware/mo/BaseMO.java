@@ -19,9 +19,12 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.mo.ManagedEntity;
+import com.vmware.vim25.mo.Task;
 
 public class BaseMO {
     private static final Logger s_logger = Logger.getLogger(BaseMO.class);
@@ -70,7 +73,8 @@ public class BaseMO {
 	}
 
 	public boolean destroy() throws Exception {
-        ManagedObjectReference morTask = _context.getService().destroy_Task(_mor);
+	    Task task = getManagedEntity().destroy_Task();
+	    ManagedObjectReference morTask = task.getMOR();
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if(result) {
@@ -83,11 +87,12 @@ public class BaseMO {
 	}
 
 	public void reload() throws Exception {
-	    _context.getService().reload(_mor);
+	    getManagedEntity().reload();
 	}
 
 	public boolean rename(String newName) throws Exception {
-	    ManagedObjectReference morTask = _context.getService().rename_Task(_mor, newName);
+	    Task task = getManagedEntity().rename_Task(newName);
+	    ManagedObjectReference morTask = task.getMOR();
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if(result) {
@@ -145,5 +150,9 @@ public class BaseMO {
 				_context.getServiceContent().getCustomFieldsManager());
 
 		return cfmMo.getCustomFieldKey(morType, fieldName);
+	}
+	
+	public ManagedEntity getManagedEntity() {
+	    return new ManagedEntity(_context.getServerConnection(), _mor);
 	}
 }
