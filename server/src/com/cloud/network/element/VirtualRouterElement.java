@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -52,7 +51,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -91,7 +89,6 @@ import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -102,25 +99,13 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
-		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class,
+		        DhcpServiceProvider.class, UserDataServiceProvider.class,
 		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
 		        PortForwardingServiceProvider.class, IpDeployer.class,
 		        RemoteAccessVPNServiceProvider.class, NetworkMigrationResponder.class} )
-public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
+public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider,
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
         NetworkMigrationResponder {
@@ -185,7 +170,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             }
         } else {
             if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() 
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName()
                         + " in the network " + network);
                 return false;
             }
@@ -206,8 +191,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, 
-                _accountMgr.getAccount(network.getAccountId()), params, 
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest,
+                _accountMgr.getAccount(network.getAccountId()), params,
                 offering.getRedundantRouter());
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!",
@@ -218,7 +203,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == HypervisorType.BareMetal) {
@@ -1047,18 +1032,18 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        if (!services.contains(Service.SourceNat)) {
-            if (services.contains(Service.StaticNat) || services.contains(Service.Firewall) || services.contains(Service.Lb) || 
-                    services.contains(Service.PortForwarding) || services.contains(Service.Vpn)) {
-                String servicesList = "[";
-                for (Service service : services) {
-                    servicesList += service.getName() + " ";
-                }
-                servicesList += "]";
-                s_logger.warn("Virtual router can't enable services " + servicesList + " without source NAT service");
-                return false;
-            }
-        }
+//        if (!services.contains(Service.SourceNat)) {
+//            if (services.contains(Service.StaticNat) || services.contains(Service.Firewall) || services.contains(Service.Lb) ||
+//                    services.contains(Service.PortForwarding) || services.contains(Service.Vpn)) {
+//                String servicesList = "[";
+//                for (Service service : services) {
+//                    servicesList += service.getName() + " ";
+//                }
+//                servicesList += "]";
+//                s_logger.warn("Virtual router can't enable services " + servicesList + " without source NAT service");
+//                return false;
+//            }
+//        }
         return true;
     }
 
