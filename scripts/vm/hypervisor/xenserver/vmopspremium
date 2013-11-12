@@ -25,15 +25,19 @@ import XenAPIPlugin
 sys.path.append("/opt/xensource/sm/")
 import util
 import socket
+import cloudstack_pluginlib as lib
+import logging
+
+lib.setup_logging("/var/log/vmops.log")
 
 CS_DIR="/opt/cloudstack/bin/"
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### VMOPS enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### VMOPS exit  %s ####" % name )
         return res
     return wrapped
 

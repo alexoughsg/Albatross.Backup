@@ -44,9 +44,9 @@ lib.setup_logging("/var/log/ovs-pvlan.log")
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name)
+        logging.debug("#### VMOPS enter  %s ####" % name)
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name)
+        logging.debug("#### VMOPS exit  %s ####" % name)
         return res
     return wrapped
 
