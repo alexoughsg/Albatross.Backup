@@ -32,6 +32,8 @@ import subprocess
 import zlib
 from util import CommandException
 
+CS_DIR="/opt/cloudstack/bin/"
+
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
@@ -47,7 +49,7 @@ def add_to_VCPUs_params_live(session, args):
     value = args['value']
     vmname = args['vmname']
     try:
-        cmd = ["bash", "/opt/xensource/bin/add_to_vcpus_params_live.sh", vmname, key, value]
+        cmd = ["bash", CS_DIR + "add_to_vcpus_params_live.sh", vmname, key, value]
         txt = util.pread2(cmd)
     except:
         return 'false'
@@ -57,7 +59,7 @@ def add_to_VCPUs_params_live(session, args):
 def setup_iscsi(session, args):
    uuid=args['uuid']
    try:
-       cmd = ["bash", "/opt/xensource/bin/setup_iscsi.sh", uuid]
+       cmd = ["bash", CS_DIR + "setup_iscsi.sh", uuid]
        txt = util.pread2(cmd)
    except:
        txt = ''
@@ -68,7 +70,7 @@ def setup_iscsi(session, args):
 def getgateway(session, args):
     mgmt_ip = args['mgmtIP']
     try:
-        cmd = ["bash", "/opt/xensource/bin/network_info.sh", "-g", mgmt_ip]
+        cmd = ["bash", CS_DIR + "network_info.sh", "-g", mgmt_ip]
         txt = util.pread2(cmd)
     except:
         txt = ''
@@ -79,7 +81,7 @@ def getgateway(session, args):
 def preparemigration(session, args):
     uuid = args['uuid']
     try:
-        cmd = ["/opt/xensource/bin/make_migratable.sh", uuid]
+        cmd = [CS_DIR + "make_migratable.sh", uuid]
         util.pread2(cmd)
         txt = 'success'
     except:
@@ -91,7 +93,7 @@ def preparemigration(session, args):
 @echo
 def setIptables(session, args):
     try:
-        cmd = ["/bin/bash", "/opt/xensource/bin/setupxenserver.sh"]
+        cmd = ["/bin/bash", CS_DIR + "setupxenserver.sh"]
         txt = util.pread2(cmd)
         txt = 'success'
     except:
@@ -120,7 +122,7 @@ def pingdomr(session, args):
 def kill_copy_process(session, args):
     namelabel = args['namelabel']
     try:
-        cmd = ["bash", "/opt/xensource/bin/kill_copy_process.sh", namelabel]
+        cmd = ["bash", CS_DIR + "kill_copy_process.sh", namelabel]
         txt = util.pread2(cmd)
     except:
         txt = 'false'
@@ -134,7 +136,7 @@ def pingxenserver(session, args):
 def pingtest(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/pingtest.sh")
+    cmd.insert(0, CS_DIR + "pingtest.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -149,7 +151,7 @@ def pingtest(session, args):
 def savePassword(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/save_password_to_domr.sh")
+    cmd.insert(0, CS_DIR + "save_password_to_domr.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -164,7 +166,7 @@ def savePassword(session, args):
 def saveDhcpEntry(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/dhcp_entry.sh")
+    cmd.insert(0, CS_DIR + "dhcp_entry.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -226,7 +228,7 @@ def setLinkLocalIP(session, args):
 def setFirewallRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/call_firewall.sh")
+    cmd.insert(0, CS_DIR + "call_firewall.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -241,7 +243,7 @@ def setFirewallRule(session, args):
 def routerProxy(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/router_proxy.sh")
+    cmd.insert(0, CS_DIR + "router_proxy.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -259,7 +261,7 @@ def routerProxy(session, args):
 def setLoadBalancerRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/call_loadbalancer.sh")
+    cmd.insert(0, CS_DIR + "call_loadbalancer.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -286,7 +288,7 @@ def configdnsmasq(session, args):
 def createipAlias(session, args):
     args = args['args']
     cmd = args.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/createipAlias.sh")
+    cmd.insert(0, CS_DIR + "createipAlias.sh")
     cmd.insert(0, "bin/bash")
     try:
        txt=util.pread2(cmd)
@@ -300,7 +302,7 @@ def createipAlias(session, args):
 def deleteipAlias(session, args):
     args = args['args']
     cmd = args.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/deleteipAlias.sh")
+    cmd.insert(0, CS_DIR + "deleteipAlias.sh")
     cmd.insert(0, "bin/bash")
     try:
        txt=util.pread2(cmd)
@@ -1606,7 +1608,7 @@ def network_rules(session, args):
 def bumpUpPriority(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/bumpUpPriority.sh")
+    cmd.insert(0, CS_DIR + "bumpUpPriority.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)

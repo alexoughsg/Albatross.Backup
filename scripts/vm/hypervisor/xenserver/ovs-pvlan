@@ -30,13 +30,16 @@ import util
 
 from time import localtime as _localtime, asctime as _asctime
 
+CS_DIR = "/opt/cloudstack/bin/"
+
 xePath = "/opt/xensource/bin/xe"
+dhcpSetupPath = CS_DIR + "ovs-pvlan-dhcp-host.sh"
+vmSetupPath = CS_DIR + "ovs-pvlan-vm.sh"
+getDhcpIfacePath = CS_DIR + "ovs-get-dhcp-iface.sh"
+pvlanCleanupPath = CS_DIR + "ovs-pvlan-cleanup.sh"
+getBridgePath = CS_DIR + "ovs-get-bridge.sh"
+
 lib.setup_logging("/var/log/ovs-pvlan.log")
-dhcpSetupPath = "/opt/xensource/bin/ovs-pvlan-dhcp-host.sh"
-vmSetupPath = "/opt/xensource/bin/ovs-pvlan-vm.sh"
-getDhcpIfacePath = "/opt/xensource/bin/ovs-get-dhcp-iface.sh"
-pvlanCleanupPath = "/opt/xensource/bin/ovs-pvlan-cleanup.sh"
-getBridgePath = "/opt/xensource/bin/ovs-get-bridge.sh"
 
 def echo(fn):
     def wrapped(*v, **k):

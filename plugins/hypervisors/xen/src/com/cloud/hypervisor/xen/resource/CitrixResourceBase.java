@@ -295,6 +295,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -5196,6 +5197,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
 
                 com.trilead.ssh2.Session session = sshConnection.openSession();
+                
+                String cmd = "mkdir -p /opt/cloudstack/bin";
+                if (!SSHCmdHelper.sshExecuteCmd(sshConnection, cmd)) {
+                    throw new CloudRuntimeException("Cannot create directory /opt/cloudstack/bin on XenServer hosts");
+                }
                 SCPClient scp = new SCPClient(sshConnection);
 
                 List<File> files = getPatchFiles();
