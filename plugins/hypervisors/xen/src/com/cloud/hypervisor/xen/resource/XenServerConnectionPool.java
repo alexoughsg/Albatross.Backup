@@ -54,7 +54,6 @@ public class XenServerConnectionPool {
     protected HashMap<String /* poolUuid */, XenServerConnection> _conns = new HashMap<String, XenServerConnection>();
     protected int _retries;
     protected int _interval;
-    protected static boolean s_managePool = true;
     protected static long s_sleepOnError = 10 * 1000; // in ms
     static {
         File file = PropertiesUtil.findConfigFile("environment.properties");
@@ -67,15 +66,11 @@ public class XenServerConnectionPool {
                 final Properties props = new Properties();
                 props.load(finputstream);
                 finputstream.close();
-                String search = props.getProperty("manage.xenserver.pool.master");
-                if (search != null) {
-                    s_managePool = Boolean.parseBoolean(search);
-                }
-                search = props.getProperty("sleep.interval.on.error");
+                String search = props.getProperty("sleep.interval.on.error");
                 if (search != null) {
                     s_sleepOnError = NumbersUtil.parseInterval(search,  10) * 1000;
                 }
-                s_logger.info("XenServer Connection Pool Configs: manage.xenserver.pool.master=" + s_managePool + "; sleep.interval.on.error=" + s_sleepOnError);
+                s_logger.info("XenServer Connection Pool Configs: sleep.interval.on.error=" + s_sleepOnError);
             } catch (FileNotFoundException e) {
                 s_logger.debug("File is not found", e);
             } catch (IOException e) {
