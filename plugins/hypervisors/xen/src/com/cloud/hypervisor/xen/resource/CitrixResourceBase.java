@@ -49,6 +49,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import java.util.concurrent.TimeoutException;
+
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -3603,7 +3605,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
 
-    protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
+    protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() +  " is pending completion with a " + timeout + "ms timeout");
@@ -3620,7 +3622,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 String msg = "Async " + timeout/1000 + " seconds timeout for task " + task.toString();
                 s_logger.warn(msg);
                 task.cancel(c);
-                throw new Types.BadAsyncResult(msg);
+                throw new TimeoutException(msg);
             }
         }
     }
@@ -3645,7 +3647,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             task = vm.cleanRebootAsync(conn);
             try {
                 //poll every 1 seconds , timeout after 10 minutes
-                waitForTask(conn, task, 1000, 10 * 60 * 1000);
+         		waitForTask(conn, task, 1000, 10 * 60 * 1000);
                 checkForSuccess(conn, task);
             } catch (Types.HandleInvalid e) {
                 if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
@@ -3654,6 +3656,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
                 throw new CloudRuntimeException("Reboot VM catch HandleInvalid and VM is not in RUNNING state");
             }
+		} catch (TimeoutException e) {
+            throw new CloudRuntimeException(e.toString());
         } catch (XenAPIException e) {
             s_logger.debug("Unable to Clean Reboot VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard reboot");
             try {
@@ -3702,6 +3706,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
                 throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in HALTED state");
             }
+		} catch (TimeoutException e) {
+            throw new CloudRuntimeException(e.toString());
         } catch (XenAPIException e) {
             s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString());
             try {
@@ -3755,6 +3761,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
                 throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in RUNNING state");
             }
+		} catch (TimeoutException e) {
+            throw new CloudRuntimeException(e.toString());
         } catch (XenAPIException e) {
             String msg = "Unable to start VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
             s_logger.warn(msg, e);
@@ -3789,6 +3797,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
                 throw new CloudRuntimeException("migrate VM catch HandleInvalid and VM is not running on dest host");
             }
+		} catch (TimeoutException e) {
+            throw new CloudRuntimeException(e.toString());
         } catch (XenAPIException e) {
             String msg = "Unable to migrate VM(" + vmName + ") from host(" + _host.uuid +") due to " + e.toString();
             s_logger.warn(msg, e);
@@ -3816,6 +3826,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             checkForSuccess(conn, task);
             VDI dvdi = Types.toVDI(task, conn);
             return dvdi;
+		} catch (TimeoutException e) {
+            throw new CloudRuntimeException(e.toString());
         } finally {
             if (task != null) {
                 try {
@@ -3955,6 +3967,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.trace("callHostPlugin Result: " + result);
             }
             return result.replace("<value>", "").replace("</value>", "").replace("\n", "");
+		} catch (TimeoutException e) {
+            throw new CloudRuntimeException(e.toString());
         } catch (Types.HandleInvalid e) {
             s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args)
                     + " due to HandleInvalid clazz:" + e.clazz + ", handle:" + e.handle);
