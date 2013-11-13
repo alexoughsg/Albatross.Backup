@@ -31,19 +31,17 @@
 
 package com.xensource.xenapi;
 
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VersionException;
-import com.xensource.xenapi.Types.XenAPIException;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
 
 /**
  * Asynchronous event registration and handling
@@ -67,8 +65,9 @@ public class Event extends XenAPIObject {
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
+    @Override
     public String toWireString() {
-       return this.ref;
+       return ref;
     }
 
     /**
@@ -80,7 +79,7 @@ public class Event extends XenAPIObject {
         if (obj != null && obj instanceof Event)
         {
             Event other = (Event) obj;
-            return other.ref.equals(this.ref);
+            return other.ref.equals(ref);
         } else
         {
             return false;
@@ -97,31 +96,33 @@ public class Event extends XenAPIObject {
      * Represents all the fields in a Event
      */
     public static class Record implements Types.Record {
+        @Override
         public String toString() {
             StringWriter writer = new StringWriter();
             PrintWriter print = new PrintWriter(writer);
-            print.printf("%1$20s: %2$s\n", "id", this.id);
-            print.printf("%1$20s: %2$s\n", "timestamp", this.timestamp);
-            print.printf("%1$20s: %2$s\n", "clazz", this.clazz);
-            print.printf("%1$20s: %2$s\n", "operation", this.operation);
-            print.printf("%1$20s: %2$s\n", "ref", this.ref);
-            print.printf("%1$20s: %2$s\n", "objUuid", this.objUuid);
-            print.printf("%1$20s: %2$s\n", "snapshot", this.snapshot);
+            print.printf("%1$20s: %2$s\n", "id", id);
+            print.printf("%1$20s: %2$s\n", "timestamp", timestamp);
+            print.printf("%1$20s: %2$s\n", "clazz", clazz);
+            print.printf("%1$20s: %2$s\n", "operation", operation);
+            print.printf("%1$20s: %2$s\n", "ref", ref);
+            print.printf("%1$20s: %2$s\n", "objUuid", objUuid);
+            print.printf("%1$20s: %2$s\n", "snapshot", snapshot);
             return writer.toString();
         }
 
         /**
          * Convert a event.Record to a Map
          */
+        @Override
         public Map<String,Object> toMap() {
             Map<String,Object> map = new HashMap<String,Object>();
-            map.put("id", this.id == null ? 0 : this.id);
-            map.put("timestamp", this.timestamp == null ? new Date(0) : this.timestamp);
-            map.put("class", this.clazz == null ? "" : this.clazz);
-            map.put("operation", this.operation == null ? Types.EventOperation.UNRECOGNIZED : this.operation);
-            map.put("ref", this.ref == null ? "" : this.ref);
-            map.put("obj_uuid", this.objUuid == null ? "" : this.objUuid);
-            map.put("snapshot", this.snapshot);
+            map.put("id", id == null ? 0 : id);
+            map.put("timestamp", timestamp == null ? new Date(0) : timestamp);
+            map.put("class", clazz == null ? "" : clazz);
+            map.put("operation", operation == null ? Types.EventOperation.UNRECOGNIZED : operation);
+            map.put("ref", ref == null ? "" : ref);
+            map.put("obj_uuid", objUuid == null ? "" : objUuid);
+            map.put("snapshot", snapshot);
             return map;
         }
 
@@ -263,6 +264,21 @@ public class Event extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toSetOfEventRecord(result);
+    }
+
+    public static Map properFrom(Connection c, Set<String> classes, String token, Double timeout) throws BadServerResponse, XenAPIException, XmlRpcException,
+        Types.SessionNotRegistered,
+        Types.EventsLost {
+        String method_call = "event.from";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes), Marshalling.toXMLRPC(token), Marshalling.toXMLRPC(timeout)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        Map value = (Map)result;
+        Map<String, Object> from = new HashMap<String, Object>();
+        from.put("token", value.get("token"));
+        from.put("events", Types.toSetOfEventRecord(value.get("events")));
+        return from;
     }
 
     /**
