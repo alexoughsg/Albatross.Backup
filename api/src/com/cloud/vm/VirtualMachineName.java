@@ -21,7 +21,7 @@ import java.util.Formatter;
 import com.cloud.dc.Vlan;
 
 /**
- * VM Name. 
+ * VM Name.
  */
 public class VirtualMachineName {
     public static final String SEPARATOR = "-";
@@ -61,6 +61,19 @@ public class VirtualMachineName {
         return instance == null || instance.equals(tokens[3]);
     }
     
+    public static boolean isValidCloudStackVmName(String name, String instance) {
+        String[] parts = name.split(SEPARATOR);
+        if (parts.length <= 1) {
+            return false;
+        }
+
+        if (!parts[parts.length - 1].equals(instance)) {
+            return false;
+        }
+
+        return true;
+    }
+
     public static String getVmName(long vmId, long userId, String instance) {
         StringBuilder vmName = new StringBuilder("i");
         vmName.append(SEPARATOR).append(userId).append(SEPARATOR).append(vmId);

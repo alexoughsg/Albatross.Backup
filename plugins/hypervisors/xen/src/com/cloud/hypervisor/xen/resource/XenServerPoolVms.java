@@ -11,15 +11,17 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.log4j.Logger;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -51,6 +53,10 @@ public class XenServerPoolVms {
         return pv == null ? State.Stopped : pv.second(); // if a VM is absent on the cluster, it is effectively in stopped state.
     }
     
+    public Ternary<String, State, String> get(String clusterId, String name) {
+        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
+        return vms.get(name);
+    }
 
     public void put(String clusterId, String hostUuid, String name, State state, String xstoolsversion){
         HashMap<String, Ternary<String, State, String>> vms= getClusterVmState(clusterId);
