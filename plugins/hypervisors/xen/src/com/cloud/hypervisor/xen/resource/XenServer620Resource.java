@@ -45,7 +45,7 @@ public class XenServer620Resource extends XenServer610Resource {
     @Override
     protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
+        String patch = "scripts/vm/hypervisor/xenserver/xenserver62/patch";
         String patchfilePath = Script.findScript("" , patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);

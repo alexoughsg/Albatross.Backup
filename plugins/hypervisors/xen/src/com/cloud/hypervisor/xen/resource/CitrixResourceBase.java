@@ -6183,6 +6183,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             path = path.replace("//", "/");
             deviceConfig.put("server", uri.getHost());
             deviceConfig.put("serverpath", path);
+            deviceConfig.put("nosubdir", "true");
             String name = UUID.nameUUIDFromBytes(new String(uri.getHost() + path).getBytes()).toString();
             if (!shared) {
                 Set<SR> srs = SR.getByNameLabel(conn, name);
@@ -6454,6 +6455,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             deviceConfig.put("server", server);
             deviceConfig.put("serverpath", serverpath);
+            deviceConfig.put("nosubdir", "true");
             Host host = Host.getByUuid(conn, _host.uuid);
             SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.NFS.toString(), "user", true,
                     new HashMap<String, String>());

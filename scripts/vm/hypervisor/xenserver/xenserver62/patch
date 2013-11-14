@@ -1,0 +1,76 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# This file specifies the files that need
+# to be transferred over to the XenServer.
+# The format of this file is as follows:
+# [Name of file]=[source path],[file permission],[destination path]
+# [destination path] is required.
+# If [file permission] is missing, 755 is assumed.
+# If [source path] is missing, it looks in the same
+# directory as the patch file.
+# If [source path] starts with '/', then it is absolute path.
+# If [source path] starts with '~', then it is path relative to management server home directory.
+# If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
+vmops=..,0755,/etc/xapi.d/plugins
+xen-ovs-vif-flows.rules=..,0644,/etc/udev/rules.d
+ovs-vif-flows.py=..,0755,/etc/xapi.d/plugins
+cloudstack_plugins.conf=..,0644,/etc/xensource
+cloudstack_pluginlib.py=..,0755,/etc/xapi.d/plugins
+ovstunnel=..,0755,/etc/xapi.d/plugins
+vmopsSnapshot=..,0755,/etc/xapi.d/plugins
+systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
+id_rsa.cloud=../../../systemvm,0600,/root/.ssh
+network_info.sh=..,0755,/opt/cloudstack/bin
+setupxenserver.sh=..,0755,/opt/cloudstack/bin
+make_migratable.sh=..,0755,/opt/cloudstack/bin
+createipAlias.sh=..,0755,/opt/cloudstack/bin
+deleteipAlias.sh=..,0755,/opt/cloudstack/bin
+setup_iscsi.sh=..,0755,/opt/cloudstack/bin
+pingtest.sh=../../..,0755,/opt/cloudstack/bin
+dhcp_entry.sh=../../../../network/domr/,0755,/opt/cloudstack/bin
+save_password_to_domr.sh=../../../../network/domr/,0755,/opt/cloudstack/bin
+call_firewall.sh=../../../../network/domr/,0755,/opt/cloudstack/bin
+call_loadbalancer.sh=../../../../network/domr/,0755,/opt/cloudstack/bin
+router_proxy.sh=../../../../network/domr/,0755,/opt/cloudstack/bin
+cloud-setup-bonding.sh=..,0755,/opt/cloudstack/bin
+copy_vhd_to_secondarystorage.sh=..,0755,/opt/cloudstack/bin
+copy_vhd_from_secondarystorage.sh=..,0755,/opt/cloudstack/bin
+kill_copy_process.sh=..,0755,/opt/cloudstack/bin
+setup_heartbeat_sr.sh=..,0755,/opt/cloudstack/bin
+setup_heartbeat_file.sh=..,0755,/opt/cloudstack/bin
+check_heartbeat.sh=..,0755,/opt/cloudstack/bin
+xenheartbeat.sh=..,0755,/opt/cloudstack/bin
+launch_hb.sh=..,0755,/opt/cloudstack/bin
+vhd-util=..,0755,/opt/cloudstack/bin
+vmopspremium=..,0755,/etc/xapi.d/plugins
+create_privatetemplate_from_snapshot.sh=..,0755,/opt/cloudstack/bin
+upgrade_snapshot.sh=..,0755,/opt/cloudstack/bin
+cloud-clean-vlan.sh=..,0755,/opt/cloudstack/bin
+cloud-prepare-upgrade.sh=..,0755,/opt/cloudstack/bin
+bumpUpPriority.sh=../../../../network/domr/,0755,/opt/cloudstack/bin
+swift=..,0755,/opt/cloudstack/bin
+swiftxen=..,0755,/etc/xapi.d/plugins
+s3xen=..,0755,/etc/xapi.d/plugins
+add_to_vcpus_params_live.sh=..,0755,/opt/cloudstack/bin
+ovs-pvlan=..,0755,/etc/xapi.d/plugins
+ovs-pvlan-dhcp-host.sh=../../../network,0755,/opt/cloudstack/bin
+ovs-pvlan-vm.sh=../../../network,0755,/opt/cloudstack/bin
+ovs-pvlan-cleanup.sh=../../../network,0755,/opt/cloudstack/bin
+ovs-get-dhcp-iface.sh=..,0755,/opt/cloudstack/bin
+ovs-get-bridge.sh=..,0755,/opt/cloudstack/bin
+cloudstacklog=..,0644,/etc/logrotate.d
