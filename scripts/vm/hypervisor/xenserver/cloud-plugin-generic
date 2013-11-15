@@ -449,10 +449,6 @@ def can_bridge_firewall(session, args):
             return 'false'
     default_ebtables_rules()
     allow_egress_traffic(session)
-    if not os.path.exists('/var/run/cloud'):
-        os.makedirs('/var/run/cloud')
-    if not os.path.exists('/var/cache/cloud'):
-        os.makedirs('/var/cache/cloud')
     #get_ipset_keyword()
  
     cleanup_rules_for_dead_vms(session)
