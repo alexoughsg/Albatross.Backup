@@ -26,43 +26,48 @@
 # If [source path] starts with '/', then it is absolute path.
 # If [source path] starts with '~', then it is path relative to management server home directory.
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
+# 
+# The following specifies the paths to deposit files
+# /usr/lib/xcp/plugins - All XAPI plugins.  Every file placed here should start with "cloud-".
+# /etc/cloud - Configuration files for scripts.
+# /usr/lib/cloud/bin - All scripts used in the normal operation.
+# /usr/lib/cloud/tools/bin - All scripts used for testing/support that are meant to be run by hand.
+# /etc/logrotate.d - All cloud log rotation configuration files.  Every file placed here must start with "cloud-".
 NFSSR.py=/usr/lib/xcp/sm
-vmops=.,0755,/usr/lib/xcp/plugins
-ovsgre=..,0755,/usr/lib/xcp/plugins
-ovstunnel=..,0755,/usr/lib/xcp/plugins
-vmopsSnapshot=.,0755,/usr/lib/xcp/plugins
-hostvmstats.py=..,0755,/usr/lib/xcp/sm
+cloud-plugin-generic=.,0755,/usr/lib/xcp/plugins
+cloud-plugin-ovsgre=..,0755,/usr/lib/xcp/plugins
+cloud-plugin-ovstunnel=..,0755,/usr/lib/xcp/plugins
+cloud-plugin-snapshot=.,0755,/usr/lib/xcp/plugins
 systemvm.iso=../../../../../vms,0644,/usr/share/xcp/packages/iso/
 id_rsa.cloud=../../../systemvm,0600,/root/.ssh
-network_info.sh=..,0755,/usr/lib/xcp/bin
-setupxenserver.sh=..,0755,/usr/lib/xcp/bin
-make_migratable.sh=..,0755,/usr/lib/xcp/bin
-setup_iscsi.sh=..,0755,/usr/lib/xcp/bin
-pingtest.sh=../../..,0755,/usr/lib/xcp/bin
-dhcp_entry.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-ipassoc.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-save_password_to_domr.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-networkUsage.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-call_firewall.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-call_loadbalancer.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-l2tp_vpn.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-cloud-setup-bonding.sh=..,0755,/usr/lib/xcp/bin
-copy_vhd_to_secondarystorage.sh=.,0755,/usr/lib/xcp/bin
-copy_vhd_from_secondarystorage.sh=.,0755,/usr/lib/xcp/bin
-setup_heartbeat_sr.sh=..,0755,/usr/lib/xcp/bin
-setup_heartbeat_file.sh=..,0755,/usr/lib/xcp/bin
-check_heartbeat.sh=..,0755,/usr/lib/xcp/bin
-xenheartbeat.sh=..,0755,/usr/lib/xcp/bin
-launch_hb.sh=..,0755,/usr/lib/xcp/bin
-vhd-util=..,0755,/usr/lib/xcp/bin
-vmopspremium=.,0755,/usr/lib/xcp/plugins
-create_privatetemplate_from_snapshot.sh=.,0755,/usr/lib/xcp/bin
-upgrade_snapshot.sh=..,0755,/usr/lib/xcp/bin
-cloud-clean-vlan.sh=..,0755,/usr/lib/xcp/bin
-cloud-prepare-upgrade.sh=..,0755,/usr/lib/xcp/bin
-getRouterStatus.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-bumpUpPriority.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-getDomRVersion.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-router_proxy.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-createipAlias.sh=..,0755,/usr/lib/xcp/bin
-deleteipAlias.sh=..,0755,/usr/lib/xcp/bin
+network_info.sh=..,0755,/usr/lib/cloud/bin
+setupxenserver.sh=..,0755,/usr/lib/cloud/bin
+make_migratable.sh=..,0755,/usr/lib/cloud/bin
+setup_iscsi.sh=..,0755,/usr/lib/cloud/bin
+pingtest.sh=../../..,0755,/usr/lib/cloud/bin
+dhcp_entry.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+ipassoc.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+save_password_to_domr.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+networkUsage.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+call_firewall.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+call_loadbalancer.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+l2tp_vpn.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+cloud-setup-bonding.sh=..,0755,/usr/lib/cloud/bin
+copy_vhd_to_secondarystorage.sh=.,0755,/usr/lib/cloud/bin
+copy_vhd_from_secondarystorage.sh=.,0755,/usr/lib/cloud/bin
+setup_heartbeat_sr.sh=..,0755,/usr/lib/cloud/bin
+setup_heartbeat_file.sh=..,0755,/usr/lib/cloud/bin
+check_heartbeat.sh=..,0755,/usr/lib/cloud/bin
+xenheartbeat.sh=..,0755,/usr/lib/cloud/bin
+launch_hb.sh=..,0755,/usr/lib/cloud/bin
+vhd-util=..,0755,/usr/lib/cloud/bin
+create_privatetemplate_from_snapshot.sh=.,0755,/usr/lib/cloud/bin
+upgrade_snapshot.sh=..,0755,/usr/lib/cloud/bin
+cloud-clean-vlan.sh=..,0755,/usr/lib/cloud/bin
+cloud-prepare-upgrade.sh=..,0755,/usr/lib/cloud/bin
+getRouterStatus.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+bumpUpPriority.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+getDomRVersion.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+router_proxy.sh=../../../../network/domr/,0755,/usr/lib/cloud/bin
+createipAlias.sh=..,0755,/usr/lib/cloud/bin
+deleteipAlias.sh=..,0755,/usr/lib/cloud/bin

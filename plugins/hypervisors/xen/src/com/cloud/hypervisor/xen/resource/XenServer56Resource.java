@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
@@ -20,9 +20,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
@@ -36,14 +47,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XenServer56Resource extends CitrixResourceBase {
@@ -142,7 +145,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             args += vif;
         }
 
-        return callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        return callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
     }
 
     protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
@@ -169,7 +172,7 @@ public class XenServer56Resource extends CitrixResourceBase {
                 return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
             }
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (option.equals("get") || option.equals("vpn")) {
                 long[] stats = new long[2];
                 if (result != null) {
@@ -208,7 +211,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             return answer;
         } catch (Exception ex) {
             s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex); 
+            return new NetworkUsageAnswer(cmd, ex);
         }
     }
 

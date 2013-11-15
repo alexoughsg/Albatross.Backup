@@ -44,13 +44,12 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.util.concurrent.TimeoutException;
-
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -431,7 +430,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected boolean pingdomr(Connection conn, String host, String port) {
         String status;
-        status = callHostPlugin(conn, "vmops", "pingdomr", "host", host, "port", port);
+        status = callHostPlugin(conn, "cloud-plugin-generic", "pingdomr", "host", host, "port", port);
 
         if (status == null || status.isEmpty()) {
             return false;
@@ -678,10 +677,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 long utilization = 0; // max CPU cap, default is unlimited
                 utilization = (int) ((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
                 //vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization)); currently xenserver doesnot support Xapi to add VCPUs params live.
-                callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName() );
+                callHostPlugin(conn, "cloud-plugin-generic", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName());
             }
             //vm.addToVCPUsParamsLive(conn, "weight", Integer.toString(cpuWeight));
-            callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", Integer.toString(cpuWeight), "vmname", vmSpec.getName() );
+            callHostPlugin(conn, "cloud-plugin-generic", "add_to_VCPUs_params_live", "key", "weight", "value", Integer.toString(cpuWeight), "vmname", vmSpec.getName());
         }
     }
 
@@ -816,7 +815,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String vmName, String oldVmUuid, Boolean snapshotMemory, String hostUUID)
             throws XenAPIException, XmlRpcException {
  
-        String results = callHostPluginAsync(conn, "vmopsSnapshot",
+        String results = callHostPluginAsync(conn, "cloud-plugin-snapshot",
                 "revert_memory_snapshot", 10 * 60 * 1000, "snapshotUUID",
                 vmSnapshot.getUuid(conn), "vmName", vmName, "oldVmUuid",
                 oldVmUuid, "snapshotMemory", snapshotMemory.toString(), "hostUUID", hostUUID);
@@ -998,7 +997,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (!configured) {
                 // Plug dom0 vif only if not done before for network and host
                 enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
-                String result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge,
+                String result = callHostPlugin(conn, "cloud-plugin-ovstunnel", "setup_ovs_bridge", "bridge", bridge,
                         "key", String.valueOf(key),
                         "xs_nw_uuid", nw.getUuid(conn),
                         "cs_host_id", ((Long)hostId).toString());
@@ -1021,7 +1020,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Network nw = findOrCreateTunnelNetwork(conn, key);
             String bridge = nw.getBridge(conn);
-            String result = callHostPlugin(conn, "ovstunnel", "destroy_ovs_bridge", "bridge", bridge);
+            String result = callHostPlugin(conn, "cloud-plugin-ovstunnel", "destroy_ovs_bridge", "bridge", bridge);
             String[] res = result.split(":");
             if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
                 //TODO: Should make this error not fatal?
@@ -1627,7 +1626,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     	
     	String result = null;
     	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
-    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", nwNameLabel,
+            result = callHostPlugin(conn, "cloud-plugin-ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", nwNameLabel,
     				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-name", dhcpName,
     				"dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
     		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
@@ -1637,7 +1636,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     			s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
     		}
     	} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
-    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", nwNameLabel,
+            result = callHostPlugin(conn, "cloud-plugin-ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", nwNameLabel,
     				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac);
     		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
     			s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
@@ -1728,7 +1727,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         }
                     }
                     if (secGrpEnabled) {
-                        result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
+                        result = callHostPlugin(conn, "cloud-plugin-generic", "default_network_rules_systemvm", "vmName", vmName);
                         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                             s_logger.warn("Failed to program default network rules for " + vmName);
                         } else {
@@ -1753,7 +1752,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             } else {
                                 secIpsStr = "0:";
                             }
-                            result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
+                            result = callHostPlugin(conn, "cloud-plugin-generic", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID",
+                                Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                                 s_logger.warn("Failed to program default network rules for " + vmName+" on nic with ip:"+nic.getIp()+" mac:"+nic.getMac());
@@ -1790,7 +1790,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private boolean doPingTest(Connection conn, final String computingHostIp) {
         String args = "-h " + computingHostIp;
-        String result = callHostPlugin(conn, "vmops", "pingtest", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "pingtest", "args", args);
         if (result == null || result.isEmpty()) {
             return false;
         }
@@ -1803,7 +1803,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private boolean doPingTest(Connection conn, final String domRIp, final String vmIp) {
         String args = "-i " + domRIp + " -p " + vmIp;
-        String result = callHostPlugin(conn, "vmops", "pingtest", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "pingtest", "args", args);
         if (result == null || result.isEmpty()) {
             return false;
         }
@@ -1833,7 +1833,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (String ip : cmd.getVpnIps()) {
             args += " " + ip;
         }
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
@@ -1843,7 +1843,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private CheckRouterAnswer execute(CheckRouterCommand cmd) {
         Connection conn = getConnection();
         String args = "checkrouter.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
@@ -1853,7 +1853,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
         Connection conn = getConnection();
         String args = "get_template_version.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
         }
@@ -1867,7 +1867,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private Answer execute(BumpUpPriorityCommand cmd) {
         Connection conn = getConnection();
         String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "bumpUpPriority", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "bumpUpPriority", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "BumpUpPriorityCommand failed");
         }
@@ -1917,7 +1917,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "setFirewallRule", "args", args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -1942,7 +1942,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += rule.revoked() ? " -D" : " -A";
             args += " -l " + rule.getSrcIp();
             args += " -r " + rule.getDstIp();
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -1980,7 +1980,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "setFirewallRule", "args", args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -2009,7 +2009,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             tmpCfgFileContents += "\n";
         }
         String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
-        String result = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "createFileInDomr", "domrip", routerIp, "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
@@ -2051,7 +2051,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -s " + sb.toString();
         }
 
-        result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
@@ -2067,7 +2067,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count()+":"+ipaliasto.getRouterip()+":"+ipaliasto.getNetmask()+"-";
         }
-        String result = callHostPlugin(conn, "vmops", "createipAlias", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "createipAlias", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "CreateIPAliasCommand failed\n");
         }
@@ -2089,7 +2089,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
         }
-        String result = callHostPlugin(conn, "vmops", "deleteipAlias", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "deleteipAlias", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DeleteipAliasCommand failed\n");
         }
@@ -2106,7 +2106,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args = args + dhcpTo.getRouterIp()+":"+dhcpTo.getGateway()+":"+dhcpTo.getNetmask()+":"+dhcpTo.getStartIpOfSubnet()+"-";
         }
 
-        String result = callHostPlugin(conn, "vmops", "configdnsmasq", "routerip", routerIp, "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "configdnsmasq", "routerip", routerIp, "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DnsMasqconfigCommand failed");
@@ -2137,7 +2137,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             tmpCfgFileContents += "\n";
         }
 
-        String result = callHostPlugin(conn, "vmops", "createFile", "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "createFile", "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
@@ -2178,13 +2178,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -s " + sb.toString();
         }
 
-        result = callHostPlugin(conn, "vmops", "setLoadBalancerRule", "args", args);
+        result = callHostPlugin(conn, "cloud-plugin-generic", "setLoadBalancerRule", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
         }
 
-        callHostPlugin(conn, "vmops", "deleteFile", "filepath", tmpCfgFilePath);
+        callHostPlugin(conn, "cloud-plugin-generic", "deleteFile", "filepath", tmpCfgFilePath);
 
         return new Answer(cmd);
     }
@@ -2217,7 +2217,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         	args += " -z";
         }
         
-        String result = callHostPlugin(conn, "vmops", "saveDhcpEntry", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "saveDhcpEntry", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DhcpEntry failed");
         }
@@ -2238,7 +2238,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -d ";
             args += " -s " + cmd.getVpnServerIp();
         }
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure VPN failed");
         }
@@ -2254,7 +2254,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 args += " -u " + userpwd.getUsernamePassword();
             }
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
             }
@@ -2273,7 +2273,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String args = "vmdata.py " + routerPrivateIpAddress + " -d " + json;
 
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "vm_data failed");
@@ -2292,7 +2292,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String args = "savepassword.sh " + routerPrivateIPAddress;
         args += " -v " + vmIpAddress;
         args += " -p " + password;
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "savePassword failed");
@@ -2390,14 +2390,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
             }
 
             if (!add) {
                 args += " -d";
-                String zeroIpsRes = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                String zeroIpsRes = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
                 if (zeroIpsRes == null || zeroIpsRes.isEmpty()) {
                     //There are no ip address set on the interface. So unplug the interface
                     // If it is not unplugged then the interface is not resuable.
@@ -2474,7 +2474,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -n ";
             args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed.");
             }
@@ -2483,7 +2483,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 snatArgs += " -l " + ip.getPublicIp();
                 snatArgs += " -c " + "eth" + correctVif.getDevice(conn);
 
-                result = callHostPlugin(conn, "vmops", "routerProxy", "args", snatArgs);
+                result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", snatArgs);
                 if (result == null || result.isEmpty()) {
                     throw new InternalErrorException("Xen plugin \"vpc_privateGateway\" failed.");
                 }
@@ -3068,7 +3068,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     String upgradeSnapshot(Connection conn, String templatePath, String snapshotPath) {
-        String results = callHostPluginAsync(conn, "vmopspremium", "upgrade_snapshot",
+        String results = callHostPluginAsync(conn, "cloud-plugin-generic", "upgrade_snapshot",
                 2 * 60 * 60, "templatePath", templatePath, "snapshotPath", snapshotPath);
 
         if (results == null || results.isEmpty()) {
@@ -3088,7 +3088,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     String createTemplateFromSnapshot(Connection conn, String templatePath, String snapshotPath, int wait) {
         String tmpltLocalDir = UUID.randomUUID().toString();
-        String results = callHostPluginAsync(conn, "vmopspremium", "create_privatetemplate_from_snapshot",
+        String results = callHostPluginAsync(conn, "cloud-plugin-generic", "create_privatetemplate_from_snapshot",
                 wait, "templatePath", templatePath, "snapshotPath", snapshotPath, "tmpltLocalDir", tmpltLocalDir);
         String errMsg = null;
         if (results == null || results.isEmpty()) {
@@ -3109,7 +3109,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     boolean killCopyProcess(Connection conn, String nameLabel) {
-        String results = callHostPluginAsync(conn, "vmops", "kill_copy_process",
+        String results = callHostPluginAsync(conn, "cloud-plugin-generic", "kill_copy_process",
                 60, "namelabel", nameLabel);
         String errMsg = null;
         if (results == null || results.equals("false")) {
@@ -3140,7 +3140,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     String copy_vhd_from_secondarystorage(Connection conn, String mountpoint, String sruuid, int wait) {
         String nameLabel = "cloud-" + UUID.randomUUID().toString();
-        String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_from_secondarystorage",
+        String results = callHostPluginAsync(conn, "cloud-plugin-generic", "copy_vhd_from_secondarystorage",
                 wait, "mountpoint", mountpoint, "sruuid", sruuid, "namelabel", nameLabel);
         String errMsg = null;
         if (results == null || results.isEmpty()) {
@@ -3402,7 +3402,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // Ignore the result of the callHostPlugin. Even if unmounting the
         // snapshots dir fails, let Ready command
         // succeed.
-        callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
+        callHostPlugin(conn, "cloud-plugin-snapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
 
         setupLinkLocalNetwork(conn);
         // try to destroy CD-ROM device for all system VMs on this host
@@ -3662,7 +3662,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     void forceShutdownVM(Connection conn, VM vm) {
         try {
             Long domId = vm.getDomid(conn);
-            callHostPlugin(conn, "vmopspremium", "forceShutdownVM", "domId", domId.toString());
+            callHostPlugin(conn, "cloud-plugin-generic", "forceShutdownVM", "domId", domId.toString());
             vm.powerStateReset(conn);
             vm.destroy(conn);
         } catch (Exception e) {
@@ -3823,7 +3823,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     boolean swiftDownload(Connection conn, SwiftTO swift, String container, String rfilename, String dir, String lfilename, Boolean remote) {
         String result = null;
         try {
-            result = callHostPluginAsync(conn, "swiftxen", "swift", 60 * 60,
+            result = callHostPluginAsync(conn, "cloud-plugin-swiftxen", "swift", 60 * 60,
                     "op", "download", "url", swift.getUrl(), "account", swift.getAccount(),
                     "username", swift.getUserName(), "key", swift.getKey(), "rfilename", rfilename,
                     "dir", dir, "lfilename", lfilename, "remote", remote.toString());
@@ -3839,7 +3839,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     boolean swiftUpload(Connection conn, SwiftTO swift, String container, String ldir, String lfilename, Boolean isISCSI, int wait) {
         String result = null;
         try {
-            result = callHostPluginAsync(conn, "swiftxen", "swift", wait,
+            result = callHostPluginAsync(conn, "cloud-plugin-swiftxen", "swift", wait,
                     "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(),
                     "username", swift.getUserName(), "key", swift.getKey(), "container", container,
                     "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
@@ -3855,7 +3855,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     boolean swiftDelete(Connection conn, SwiftTO swift, String rfilename) {
         String result = null;
         try {
-            result = callHostPlugin(conn, "swiftxen", "swift",
+            result = callHostPlugin(conn, "cloud-plugin-swiftxen", "swift",
                     "op", "delete", "url", swift.getUrl(), "account", swift.getAccount(),
                     "username", swift.getUserName(), "key", swift.getKey(), "rfilename", rfilename);
             if( result != null && result.equals("true")) {
@@ -3893,7 +3893,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // Each argument is put in a separate line for readability.
         // Using more lines does not harm the environment.
         String backupUuid = UUID.randomUUID().toString();
-        String results = callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", wait,
+        String results = callHostPluginAsync(conn, "cloud-plugin-snapshot", "backupSnapshot", wait,
                 "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(),
                 "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath,
                 "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString(), "secHostId", secHostId.toString());
@@ -4029,7 +4029,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         vm.setAffinity(conn, vm.getResidentOn(conn));
 
                         if (_canBridgeFirewall) {
-                            String result = callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", cmd
+                            String result = callHostPlugin(conn, "cloud-plugin-generic", "destroy_network_rules_for_vm", "vmName", cmd
                                     .getVmName());
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                                 s_logger.warn("Failed to remove  network rules for vm " + cmd.getVmName());
@@ -4226,7 +4226,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean setIptables(Connection conn) {
-        String result = callHostPlugin(conn, "vmops", "setIptables");
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "setIptables");
         if (result == null || result.isEmpty()) {
             return false;
         }
@@ -4714,7 +4714,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private HashMap<String, Pair<Long,Long>> syncNetworkGroups(Connection conn, long id) {
         HashMap<String, Pair<Long,Long>> states = new HashMap<String, Pair<Long,Long>>();
 
-        String result = callHostPlugin(conn, "vmops", "get_rule_logs_for_vms", "host_uuid", _host.uuid);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "get_rule_logs_for_vms", "host_uuid", _host.uuid);
         s_logger.trace("syncNetworkGroups: id=" + id + " got: " + result);
         String [] rulelogs = result != null ?result.split(";"): new String [0];
         for (String rulesforvm: rulelogs){
@@ -4901,7 +4901,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             String brName = linkLocal.getBridge(conn);
-            callHostPlugin(conn, "vmops", "setLinkLocalIP", "brName", brName);
+            callHostPlugin(conn, "cloud-plugin-generic", "setLinkLocalIP", "brName", brName);
             _host.linkLocalNetwork = linkLocal.getUuid(conn);
 
         } catch (XenAPIException e) {
@@ -5050,7 +5050,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("multipath is already set");
             }
             if (cmd.needSetup() ) {
-                result = callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", _host.uuid);
+                result = callHostPlugin(conn, "cloud-plugin-generic", "setup_iscsi", "uuid", _host.uuid);
                 if (!result.contains("> DONE <")) {
                     s_logger.warn("Unable to setup iscsi: " + result);
                     return new SetupAnswer(cmd, result);
@@ -5160,7 +5160,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             while (it.hasNext()) {
                 String tag = it.next();
-                if (tag.startsWith("vmops-version-")) {
+                if (tag.startsWith("cloud-version-")) {
                     if (tag.contains(version)) {
                         s_logger.info(logX(host, "Host " + hr.address + " is already setup."));
                         return false;
@@ -5247,7 +5247,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } finally {
                 sshConnection.close();
             }
-            hr.tags.add("vmops-version-" + version);
+            hr.tags.add("cloud-version-" + version);
             host.setTags(conn, hr.tags);
             return true;
         } catch (XenAPIException e) {
@@ -5496,7 +5496,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
 
     protected String callHostPluginPremium(Connection conn, String cmd, String... params) {
-        return callHostPlugin(conn, "vmopspremium", cmd, params);
+        return callHostPlugin(conn, "cloud-plugin-generic", cmd, params);
     }
 
     protected String setupHeartbeatSr(Connection conn, SR sr, boolean force) throws XenAPIException, XmlRpcException {
@@ -5520,7 +5520,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     break;
                 }
             }
-            result = callHostPluginThroughMaster(conn, "vmopspremium", "setup_heartbeat_sr", "host", _host.uuid,
+            result = callHostPluginThroughMaster(conn, "cloud-plugin-generic", "setup_heartbeat_sr", "host", _host.uuid,
                     "sr", srUuid);
             if (result == null || !result.split("#")[1].equals("0")) {
                 throw new CloudRuntimeException("Unable to setup heartbeat sr on SR " + srUuid + " due to " + result);
@@ -5590,7 +5590,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean can_bridge_firewall(Connection conn) {
-        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid, "instance", _instance));
+        return Boolean.valueOf(callHostPlugin(conn, "cloud-plugin-generic", "can_bridge_firewall", "host_uuid", _host.uuid, "instance", _instance));
     }
 
 
@@ -5619,7 +5619,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             String bridge = nw.getBridge(conn);
-            String result = callHostPlugin(conn, "ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", cmd.getInPortName());
+            String result = callHostPlugin(conn, "cloud-plugin-ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", cmd.getInPortName());
             if (result.equalsIgnoreCase("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
@@ -5649,7 +5649,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             configureTunnelNetwork(conn, cmd.getNetworkId(), cmd.getFrom(), cmd.getKey());
             bridge = nw.getBridge(conn);
-            String result = callHostPlugin(conn, "ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", cmd.getRemoteIp(),
+            String result = callHostPlugin(conn, "cloud-plugin-ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", cmd.getRemoteIp(),
                     "key", cmd.getKey().toString(), "from", cmd.getFrom().toString(), "to", cmd.getTo().toString());
             String[] res = result.split(":");
             if (res.length == 2 && res[0].equalsIgnoreCase("SUCCESS")) {
@@ -5671,7 +5671,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Network nw = setupvSwitchNetwork(conn);
             String bridge = nw.getBridge(conn);
-            String result = callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge,
+            String result = callHostPlugin(conn, "cloud-plugin-ovsgre", "ovs_delete_flow", "bridge", bridge,
                     "vmName", cmd.getVmName());
 
             if (result.equalsIgnoreCase("SUCCESS")) {
@@ -5691,7 +5691,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private List<Pair<String, Long>> ovsFullSyncStates() {
         Connection conn = getConnection();
-        String result = callHostPlugin(conn, "ovsgre", "ovs_get_vm_log", "host_uuid", _host.uuid);
+        String result = callHostPlugin(conn, "cloud-plugin-ovsgre", "ovs_get_vm_log", "host_uuid", _host.uuid);
         String [] logs = result != null ?result.split(";"): new String [0];
         List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
         for (String log: logs){
@@ -5723,7 +5723,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
              * none guest network nic. don't worry, it will fail silently at host
              * plugin side
              */
-            String result = callHostPlugin(conn, "ovsgre", "ovs_set_tag_and_flow", "bridge", bridge,
+            String result = callHostPlugin(conn, "cloud-plugin-ovsgre", "ovs_set_tag_and_flow", "bridge", bridge,
                     "vmName", cmd.getVmName(), "tag", cmd.getTag(),
                     "vlans", cmd.getVlans(), "seqno", cmd.getSeqNo());
             s_logger.debug("set flow for " + cmd.getVmName() + " " + result);
@@ -5783,7 +5783,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Network nw = setupvSwitchNetwork(conn);
             bridge = nw.getBridge(conn);
 
-            String result = callHostPlugin(conn, "ovsgre", "ovs_create_gre", "bridge", bridge,
+            String result = callHostPlugin(conn, "cloud-plugin-ovsgre", "ovs_create_gre", "bridge", bridge,
                     "remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey(), "from",
                     Long.toString(cmd.getFrom()), "to", Long.toString(cmd.getTo()));
             String[] res = result.split(":");
@@ -5820,7 +5820,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
 
-        String result = callHostPlugin(conn, "vmops", "network_rules",
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "network_rules",
                 "vmName", cmd.getVmName(),
                 "vmIP", cmd.getGuestIp(),
                 "vmMAC", cmd.getGuestMac(),
@@ -7489,7 +7489,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     "bucket", s3.getBucketName(), "key", key, "https",
                     s3.isHttps() != null ? s3.isHttps().toString()
                             : "null"));
-            final String result = callHostPluginAsync(connection, "s3xen",
+            final String result = callHostPluginAsync(connection, "cloud-plugin-s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
 
@@ -7711,12 +7711,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
 
     protected boolean createSecondaryStorageFolder(Connection conn, String remoteMountPath, String newFolder) {
-        String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder);
+        String result = callHostPlugin(conn, "cloud-plugin-snapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder);
         return (result != null);
     }
 
     protected boolean deleteSecondaryStorageFolder(Connection conn, String remoteMountPath, String folder) {
-        String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
+        String details = callHostPlugin(conn, "cloud-plugin-snapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
         return (details != null && details.equals("1"));
     }
 
@@ -7730,7 +7730,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             checksum = "";
         }
 
-        String result = callHostPlugin(conn, "vmopsSnapshot", "post_create_private_template", "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName, "templateDescription", templateDescription,
+        String result = callHostPlugin(conn, "cloud-plugin-snapshot", "post_create_private_template", "templatePath", templatePath, "templateFilename", tmpltFilename,
+            "templateName", templateName, "templateDescription", templateDescription,
                 "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
         boolean success = false;
@@ -7749,7 +7750,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected String getVhdParent(Connection conn, String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
-        String parentUuid = callHostPlugin(conn, "vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
+        String parentUuid = callHostPlugin(conn, "cloud-plugin-snapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
                 "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
 
         if (parentUuid == null || parentUuid.isEmpty() || parentUuid.equalsIgnoreCase("None")) {
@@ -7784,7 +7785,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String deleteSnapshotBackup(Connection conn, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String backupUUID) {
 
         // If anybody modifies the formatting below again, I'll skin them
-        String result = callHostPlugin(conn, "vmopsSnapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "dcId", dcId.toString(), "accountId", accountId.toString(),
+        String result = callHostPlugin(conn, "cloud-plugin-snapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "dcId", dcId.toString(), "accountId", accountId.toString(),
                 "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath);
 
         return result;
@@ -7878,7 +7879,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new Answer(cmd, true, null);
         }
         Connection conn = getConnection();
-        String result = callHostPlugin(conn, "vmops","cleanup_rules", "instance", _instance);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "cleanup_rules", "instance", _instance);
         int numCleaned = Integer.parseInt(result);
         if (result == null || result.isEmpty() || (numCleaned < 0)) {
             s_logger.warn("Failed to cleanup rules for host " + _host.ip);
@@ -7994,7 +7995,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         boolean success = true;
         Connection conn = getConnection();
         if (cmd.getType() != VirtualMachine.Type.User) {
-            String result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", cmd.getVmName());
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "default_network_rules_systemvm", "vmName", cmd.getVmName());
             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                 success = false;
             }
@@ -8007,7 +8008,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         boolean success = true;
         Connection conn = getConnection();
 
-        String result = callHostPlugin(conn, "vmops", "network_rules_vmSecondaryIp", "vmName", cmd.getVmName(), "vmMac", cmd.getVmMac(), "vmSecIp", cmd.getVmSecIp(), "action",
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "network_rules_vmSecondaryIp", "vmName", cmd.getVmName(), "vmMac", cmd.getVmMac(), "vmSecIp",
+            cmd.getVmSecIp(), "action",
                 cmd.getAction());
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             success = false;
@@ -8050,7 +8052,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -a " + sb.toString();
         }
 
-        callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+        callResult = callHostPlugin(conn, "cloud-plugin-generic", "setFirewallRule", "args", args);
 
         if (callResult == null || callResult.isEmpty()) {
             //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
@@ -8348,7 +8350,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if ( domainName != null && !domainName.isEmpty() ) {
                 args += " -e " + domainName;
             }
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + ((result == null)? "null":result));
             }
@@ -8421,7 +8423,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure site to site VPN failed! ");
         }
@@ -8447,7 +8449,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"vpc_snat\" failed.");
             }
@@ -8489,7 +8491,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 args += " -d " + "eth" + vif.getDevice(conn);
                 args += " -a " + sb.toString();
 
-                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                callResult = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
                 if (callResult == null || callResult.isEmpty()) {
                     //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                     for (int i=0; i < results.length; i++) {
@@ -8504,7 +8506,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
                 args += " -a " + sb.toString();
 
-                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                callResult = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
                 if (callResult == null || callResult.isEmpty()) {
                     //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                     for (int i=0; i < results.length; i++) {
@@ -8538,7 +8540,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -8565,7 +8567,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             String args = "vpc_staticroute.sh " + routerIp;
             args += " -a " + sb.toString();
-            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            callResult = callHostPlugin(conn, "cloud-plugin-generic", "routerProxy", "args", args);
             if (callResult == null || callResult.isEmpty()) {
                 //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                 for (int i=0; i < results.length; i++) {

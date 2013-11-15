@@ -18,7 +18,7 @@
 
 # Version @VERSION@
 #
-# A plugin for executing script needed by vmops cloud 
+# A plugin for executing script needed by CloudStack cloud 
 
 import os, sys, time
 import XenAPIPlugin
@@ -42,9 +42,9 @@ CLOUD_DIR = '/run/cloud_mount'
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        util.SMlog("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        util.SMlog("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 

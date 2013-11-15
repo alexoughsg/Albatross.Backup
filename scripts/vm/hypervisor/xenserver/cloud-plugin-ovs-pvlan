@@ -17,7 +17,7 @@
 # under the License.
 
 
-import cloudstack_pluginlib as lib
+import cloud-plugin-lib as lib
 import logging
 import os
 import sys
@@ -30,7 +30,7 @@ import util
 
 from time import localtime as _localtime, asctime as _asctime
 
-CS_DIR = "/opt/cloudstack/bin/"
+CS_DIR = "/opt/cloud/bin/"
 
 xePath = "/opt/xensource/bin/xe"
 dhcpSetupPath = CS_DIR + "ovs-pvlan-dhcp-host.sh"
@@ -39,14 +39,14 @@ getDhcpIfacePath = CS_DIR + "ovs-get-dhcp-iface.sh"
 pvlanCleanupPath = CS_DIR + "ovs-pvlan-cleanup.sh"
 getBridgePath = CS_DIR + "ovs-get-bridge.sh"
 
-lib.setup_logging("/var/log/ovs-pvlan.log")
+lib.setup_logging("/var/log/cloud/cloud-ovs-pvlan.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name)
+        logging.debug("#### CLOUD enter  %s ####" % name)
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name)
+        logging.debug("#### CLOUD exit  %s ####" % name)
         return res
     return wrapped
 

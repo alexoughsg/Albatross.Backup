@@ -20,7 +20,7 @@
 # Creates a tunnel mesh across xenserver hosts
 # Enforces broadcast drop rules on ingress GRE tunnels
 
-import cloudstack_pluginlib as lib
+import cloud_plugin-lib as lib
 import logging
 import os
 import sys
@@ -34,7 +34,7 @@ import util
 from time import localtime as _localtime, asctime as _asctime
 
 xePath = "/opt/xensource/bin/xe"
-lib.setup_logging("/var/log/ovstunnel.log")
+lib.setup_logging("/var/log/cloud/cloud-ovstunnel.log")
 
 
 def block_ipv6_v5(bridge):
@@ -53,9 +53,9 @@ block_ipv6_handlers = {
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name)
+        logging.debug("#### CLOUD enter  %s ####" % name)
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name)
+        logging.debug("#### CLOUD exit  %s ####" % name)
         return res
     return wrapped
 

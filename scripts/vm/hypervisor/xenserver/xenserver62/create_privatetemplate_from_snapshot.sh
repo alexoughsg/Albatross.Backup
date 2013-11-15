@@ -19,9 +19,9 @@
 #set -x
  
 usage() {
-  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] \n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] [template local dir] \n" $(basename $0) 
 }
-
+options='tcp,soft,timeo=133,retrans=1'
 cleanup()
 {
   if [ ! -z $snapshotdir ]; then 
@@ -55,6 +55,15 @@ else
   templateurl=$2
 fi
 
+if [ -z $3 ]; then
+  usage
+  echo "3#no template local dir"
+  exit 0
+else
+  tmpltLocalDir=$3
+fi
+
+
 snapshotdir=/var/run/cloud_mount/$(uuidgen -r)
 mkdir -p $snapshotdir
 if [ $? -ne 0 ]; then
@@ -62,14 +71,14 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp $snapshoturl $snapshotdir
+mount -o $options $snapshoturl $snapshotdir
 if [ $? -ne 0 ]; then
   rmdir $snapshotdir
   echo "5#can not mount $snapshoturl to $snapshotdir"
   exit 0
 fi
 
-templatedir=/var/run/cloud_mount/$(uuidgen -r)
+templatedir=/var/run/cloud_mount/$tmpltLocalDir
 mkdir -p $templatedir
 if [ $? -ne 0 ]; then
   templatedir=""
@@ -78,7 +87,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp $templateurl $templatedir
+mount -o $options $templateurl $templatedir
 if [ $? -ne 0 ]; then
   rmdir $templatedir
   templatedir=""
@@ -87,47 +96,43 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-VHDUTIL="/opt/cloud/bin/vhd-util"
+VHDUTIL="/usr/bin/vhd-util"
 
-upgradeSnapshot()
+copyvhd()
 {
-  local ssvhd=$1
-  local parent=`$VHDUTIL query -p -n $ssvhd`
+  local desvhd=$1
+  local srcvhd=$2
+  local parent=
+  parent=`$VHDUTIL query -p -n $srcvhd`
   if [ $? -ne 0 ]; then
-    echo "30#failed to query $ssvhd"
+    echo "30#failed to query $srcvhd"
     cleanup
     exit 0
   fi
-  if [ "${parent##*vhd has}" = " no parent" ]; then
-    dd if=$templatevhd of=$snapshotdir/$templatefilename bs=2M 
+  if [[ "${parent}"  =~ " no parent" ]]; then
+    dd if=$srcvhd of=$desvhd bs=2M     
     if [ $? -ne 0 ]; then
-      echo "31#failed to dd $templatevhd to $snapshotdir/$templatefilenamed"
+      echo "31#failed to dd $srcvhd to $desvhd"
       cleanup
       exit 0
     fi
-
-    $VHDUTIL modify -p $snapshotdir/$templatefilename -n $ssvhd
-    if [ $? -ne 0 ]; then
-      echo "32#failed to set parent of $ssvhd to $snapshotdir/$templatefilenamed"
-      cleanup
-      exit 0
-    fi
-
-    rm -f $parent
   else
-    upgradeSnapshot $parent
+    copyvhd $desvhd $parent
+    $VHDUTIL coalesce -p $desvhd -n $srcvhd
+    if [ $? -ne 0 ]; then
+      echo "32#failed to coalesce  $desvhd to $srcvhd"
+      cleanup
+      exit 0
+    fi
   fi
 }
 
-templatevhd=$(ls $templatedir/*.vhd)
-if [ $? -ne 0 ]; then
-  echo "8#template vhd doesn't exist for $templateurl"
-  cleanup
-  exit 0
-fi
-templatefilename=${templatevhd##*/}
-snapshotvhd=$snapshotdir/$vhdfilename
-upgradeSnapshot $snapshotvhd
+templateuuid=$(uuidgen -r)
+desvhd=$templatedir/$templateuuid.vhd
+srcvhd=$snapshotdir/$vhdfilename
+copyvhd $desvhd $srcvhd
+virtualSize=`$VHDUTIL query -v -n $desvhd`
+physicalSize=`ls -l $desvhd | awk '{print $5}'`
 cleanup
-echo "0#success"
+echo "0#$templateuuid#$physicalSize#$virtualSize"
 exit 0

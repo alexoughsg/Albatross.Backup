@@ -44,7 +44,7 @@ if [ $interval -gt $2 ]; then
   exit 3
 fi
 
-file=/opt/cloudstack/bin/heartbeat
+file=/etc/cloud/heartbeat
 lastdate=$(($(date +%s) + $interval))
 
 while [ $(date +%s) -lt $(($lastdate + $2)) ]

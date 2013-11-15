@@ -83,7 +83,7 @@ fake_pv_driver() {
     return 0
   fi
   host=$(xe vm-param-get uuid=$vm param-name=resident-on)
-  xe host-call-plugin host-uuid=$host plugin=vmops fn=preparemigration args:uuid=$vm
+  xe host-call-plugin host-uuid=$host plugin=cloud-plugin-generic fn=preparemigration args:uuid=$vm
 }
 
 vms=$(xe vm-list is-control-domain=false| grep ^uuid | awk '{print $NF}')

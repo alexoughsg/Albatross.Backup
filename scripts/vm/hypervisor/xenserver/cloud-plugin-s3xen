@@ -102,7 +102,7 @@ def get_optional_key(map, key, default=''):
 
 def log(message):
 
-    util.SMlog('#### VMOPS %s ####' % message)
+    util.SMlog('#### CLOUD %s ####' % message)
 
 
 def echo(fn):

@@ -27,6 +27,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -46,12 +52,6 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
 
 
 @Local(value=ServerResource.class)
@@ -91,7 +91,7 @@ public class XcpOssResource extends CitrixResourceBase {
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
         if (_host.localSRuuid != null) {
             //create an iso vdi on it
-            String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
+            String result = callHostPlugin(conn, "cloud-plugin-generic", "createISOVHD", "uuid", _host.localSRuuid);
             if (result == null || result.equalsIgnoreCase("Failed")) {
                 throw new CloudRuntimeException("can not create systemvm vdi");
             }
@@ -157,7 +157,7 @@ public class XcpOssResource extends CitrixResourceBase {
                     publicIp = nic.getIp();
                 }
             }
-            callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
+            callHostPlugin(conn, "cloud-plugin-generic", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
         }
 
         return answer;
@@ -169,7 +169,7 @@ public class XcpOssResource extends CitrixResourceBase {
         String vmName = cmd.getVmName();
         if (vmName.startsWith("v-")) {
             Connection conn = getConnection();
-            callHostPlugin(conn, "vmops", "setDNATRule", "add", "false");
+            callHostPlugin(conn, "cloud-plugin-generic", "setDNATRule", "add", "false");
         }
         return answer;
     }

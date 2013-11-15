@@ -28,13 +28,13 @@ import util
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        util.SMlog("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        util.SMlog("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 
-SWIFT = "/opt/cloudstack/bin/swift"
+SWIFT = "/opt/cloud/bin/swift"
 
 MAX_SEG_SIZE = 5 * 1024 * 1024 * 1024
 
@@ -48,7 +48,7 @@ def upload(args):
     lfilename = args['lfilename']
     isISCSI = args['isISCSI']
     segment = 0
-    util.SMlog("#### VMOPS upload %s to swift ####", lfilename)
+    util.SMlog("#### CLOUD upload %s to swift ####", lfilename)
     savedpath = os.getcwd()
     os.chdir(ldir)
     try :

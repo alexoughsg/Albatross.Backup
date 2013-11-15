@@ -58,7 +58,7 @@ if [ `xe pbd-list sr-uuid=$2 | grep -B 1 $1 | wc -l` -eq 0 ]; then
   exit 0
 fi
 
-hbfile=/opt/cloudstack/bin/heartbeat
+hbfile=/etc/cloud/heartbeat
 
 if [ "$3" = "true" ]; then
 

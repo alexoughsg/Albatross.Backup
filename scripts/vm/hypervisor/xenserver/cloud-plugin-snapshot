@@ -18,7 +18,7 @@
 
 # Version @VERSION@
 #
-# A plugin for executing script needed by vmops cloud 
+# A plugin for executing script needed by CloudStack 
 
 import os, sys, time
 import XenAPIPlugin
@@ -34,21 +34,21 @@ import xs_errors
 import cleanup
 import stat
 import random
-import cloudstack_pluginlib as lib
+import cloud-plugin-lib as lib
 import logging
 
-lib.setup_logging("/var/log/vmops.log")
+lib.setup_logging("/var/log/cloud/cloud-plugins.log")
 
-VHD_UTIL = '/opt/cloudstack/bin/vhd-util'
+VHD_UTIL = '/usr/bin/vhd-util'
 VHD_PREFIX = 'VHD-'
 CLOUD_DIR = '/var/run/cloud_mount'
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 
