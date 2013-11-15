@@ -1,10 +1,10 @@
-/var/log/cloud/cloud-plugins.log {
+/var/log/cloud-plugins.log {
     daily
     size 1M
     rotate 20
 }
 
-/var/log/cloud/cloud-ovstunnel.log /var/log/cloud/cloud-ovs-pvlan.log {
+/var/log/cloud-ovstunnel.log /var/log/cloud-ovs-pvlan.log {
     daily
     size 1M
     rotate 2

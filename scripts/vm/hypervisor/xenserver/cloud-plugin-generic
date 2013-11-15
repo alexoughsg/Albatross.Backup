@@ -449,8 +449,8 @@ def can_bridge_firewall(session, args):
             return 'false'
     default_ebtables_rules()
     allow_egress_traffic(session)
-    if not os.path.exists('/var/log/cloud'):
-        os.makedirs('/var/log/cloud')
+    if not os.path.exists('/var/run/cloud'):
+        os.makedirs('/var/run/cloud')
     if not os.path.exists('/var/cache/cloud'):
         os.makedirs('/var/cache/cloud')
     #get_ipset_keyword()
@@ -990,7 +990,7 @@ def check_domid_changed(session, vmName):
         logging.debug("### Failed to get domid for vm  ## " + vmName)
         
     
-    logfilename = "/var/log/cloud/" + vmName +".log"
+    logfilename = "/var/run/cloud/" + vmName +".log"
     if not os.path.exists(logfilename):
         return ['-1', curr_domid]
     
@@ -1108,7 +1108,7 @@ def network_rules_for_rebooted_vm(session, vmName):
 
 @echo
 def get_vm_sec_ips(vm_name):
-    logfilename = "/var/log/cloud/" + vm_name +".ip"
+    logfilename = "/var/run/cloud/" + vm_name +".ip"
 
     lines = (line.rstrip() for line in open(logfilename))
     for line in lines:
@@ -1123,7 +1123,7 @@ def get_vm_sec_ips(vm_name):
 
 @echo
 def is_secondary_ips_set(vm_name):
-    logfilename = "/var/log/cloud/" + vm_name +".ip"
+    logfilename = "/var/run/cloud/" + vm_name +".ip"
     if not os.path.exists(logfilename):
         return False
 
@@ -1131,7 +1131,7 @@ def is_secondary_ips_set(vm_name):
 
 @echo
 def rewrite_rule_log_for_vm(vm_name, new_domid):
-    logfilename = "/var/log/cloud/" + vm_name +".log"
+    logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
         return 
     lines = (line.rstrip() for line in open(logfilename))
@@ -1148,7 +1148,7 @@ def rewrite_rule_log_for_vm(vm_name, new_domid):
 
 def get_rule_log_for_vm(session, vmName):
     vm_name = vmName;
-    logfilename = "/var/log/cloud/" + vm_name +".log"
+    logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
         return ''
     
@@ -1167,7 +1167,7 @@ def get_rule_log_for_vm(session, vmName):
 @echo
 def get_vm_mac_ip_from_log(vm_name):
     [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '0.0.0.0', '-1', '_', '-1','ff:ff:ff:ff:ff:ff']
-    logfilename = "/var/log/cloud/" + vm_name +".log"
+    logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
         return ['_', '_']
     
@@ -1272,7 +1272,7 @@ def cleanup_rules(session, args):
 @echo
 def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     vm_name = vmName;
-    logfilename = "/var/log/cloud/" + vm_name +".log"
+    logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
         logging.debug("Failed to find logfile %s" %logfilename)
         return [True, True, True]
@@ -1329,7 +1329,7 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
 @echo
 def write_secip_log_for_vm (vmName, secIps, vmId):
     vm_name = vmName
-    logfilename = "/var/log/cloud/"+vm_name+".ip"
+    logfilename = "/var/run/cloud/"+vm_name+".ip"
     logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
     output = ','.join([vmName, secIps, vmId])
@@ -1349,7 +1349,7 @@ def write_secip_log_for_vm (vmName, secIps, vmId):
 @echo
 def remove_secip_log_for_vm(vmName):
     vm_name = vmName
-    logfilename = "/var/log/cloud/"+vm_name+".ip"
+    logfilename = "/var/run/cloud/"+vm_name+".ip"
 
     result = True
     try:
@@ -1363,7 +1363,7 @@ def remove_secip_log_for_vm(vmName):
 @echo
 def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff:ff:ff:ff:ff:ff'):
     vm_name = vmName
-    logfilename = "/var/log/cloud/" + vm_name +".log"
+    logfilename = "/var/run/cloud/" + vm_name +".log"
     logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
     output = ','.join([vmName, vmID, vmIP, domID, signature, seqno, vmMac])
@@ -1382,7 +1382,7 @@ def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff
 @echo
 def remove_rule_log_for_vm(vmName):
     vm_name = vmName
-    logfilename = "/var/log/cloud/" + vm_name +".log"
+    logfilename = "/var/run/cloud/" + vm_name +".log"
 
     result = True
     try:
