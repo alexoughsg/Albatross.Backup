@@ -17,7 +17,7 @@
 # under the License.
 
 
-import cloud-plugin-lib as lib
+import cloud_plugin_lib as lib
 import logging
 import os
 import sys

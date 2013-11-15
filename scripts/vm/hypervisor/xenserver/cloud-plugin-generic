@@ -30,7 +30,7 @@ import tempfile
 import util
 import subprocess
 import zlib
-import cloud-plugin-lib as lib
+import cloud_plugin_lib as lib
 import logging
 from util import CommandException
 

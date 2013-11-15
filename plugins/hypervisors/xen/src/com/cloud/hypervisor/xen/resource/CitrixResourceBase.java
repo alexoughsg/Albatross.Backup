@@ -5179,10 +5179,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 com.trilead.ssh2.Session session = sshConnection.openSession();
                 
-                String cmd = "mkdir -p /opt/cloudstack/bin";
+                String cmd = "mkdir -p /opt/cloud/bin; mkdir -p /opt/cloud/tools; mkdir -p /var/log/cloud; mkdir -p /etc/cloud";
                 if (!SSHCmdHelper.sshExecuteCmd(sshConnection, cmd)) {
-                    throw new CloudRuntimeException("Cannot create directory /opt/cloudstack/bin on XenServer hosts");
+                    throw new CloudRuntimeException("Cannot create directory /opt/cloud/bin on XenServer hosts");
                 }
+
                 SCPClient scp = new SCPClient(sshConnection);
 
                 List<File> files = getPatchFiles();

@@ -21,7 +21,7 @@
 import os
 import sys
 
-import cloud-plugin-lib as pluginlib
+import cloud_plugin_lib as pluginlib
 
 
 def clear_flows(bridge, this_vif_ofport, vif_ofports):

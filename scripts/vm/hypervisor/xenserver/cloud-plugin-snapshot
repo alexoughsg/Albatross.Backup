@@ -34,7 +34,7 @@ import xs_errors
 import cleanup
 import stat
 import random
-import cloud-plugin-lib as lib
+import cloud_plugin_lib as lib
 import logging
 
 lib.setup_logging("/var/log/cloud/cloud-plugins.log")

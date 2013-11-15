@@ -35,12 +35,11 @@
 # /etc/logrotate.d - All cloud log rotation configuration files.  Every file placed here must start with "cloud-".
 #
 # All log files should be placed in /var/log/cloud
-NFSSR.py=/opt/xensource/sm
 cloud-plugin-generic=..,0755,/etc/xapi.d/plugins
 xen-ovs-vif-flows.rules=..,0644,/etc/udev/rules.d
 ovs-vif-flows.py=..,0755,/etc/xapi.d/plugins
 cloud-plugins.conf=..,0644,/etc/xensource
-cloud-plugin-lib.py=..,0755,/etc/xapi.d/plugins
+cloud_plugin_lib.py=..,0755,/etc/xapi.d/plugins
 cloud-plugin-ovstunnel=..,0755,/etc/xapi.d/plugins
 cloud-plugin-snapshot=..,0755,/etc/xapi.d/plugins
 systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso

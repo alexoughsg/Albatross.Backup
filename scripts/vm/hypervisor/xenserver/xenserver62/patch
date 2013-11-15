@@ -37,7 +37,7 @@
 cloud-plugin-generic=..,0755,/etc/xapi.d/plugins
 xen-ovs-vif-flows.rules=..,0644,/etc/udev/rules.d
 ovs-vif-flows.py=..,0755,/etc/xapi.d/plugins
-cloud-plugin-lib.py=..,0755,/etc/xapi.d/plugins
+cloud_plugin-lib.py=..,0755,/etc/xapi.d/plugins
 cloud-plugin-ovstunnel=..,0755,/etc/xapi.d/plugins
 cloud-plugin-snapshot=..,0755,/etc/xapi.d/plugins
 cloud-plugin-swiftxen=..,0755,/etc/xapi.d/plugins
