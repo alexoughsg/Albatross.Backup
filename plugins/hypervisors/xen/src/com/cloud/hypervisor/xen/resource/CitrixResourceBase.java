@@ -3881,9 +3881,108 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return lfilename;
     }
 
+    protected SR createFileSR(Connection conn, String path, String location) {
+        try {
+            Map<String, String> deviceConfig = new HashMap<String, String>();
+            deviceConfig.put("path", path);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            SR sr = SR.create(conn, host, deviceConfig, new Long(0), path, "file", "file", "file", false,
+                    new HashMap<String, String>());
+            sr.setNameLabel(conn, path + "-File");
+            sr.setNameDescription(conn, location);
+
+            sr.scan(conn);
+            return sr;
+        } catch (Exception e) {
+            String msg = "createFileSR failed! due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        }
+    }
+
+    protected String backupSnapshot2(Connection conn, String primaryStorageSRUuid, Long dcId, Long accountId,
+            Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String snashotPaPaUuid,
+            String prevBackupUuid, Boolean isISCSI, int wait, Long secHostId) {
+        String errMsg = null;
+        boolean mounted = false;
+        boolean filesrcreated = false;
+        boolean copied = false;
+        if (prevBackupUuid == null) {
+            prevBackupUuid = "";
+        }
+        SR ssSR = null;
+        String localDir = "/var/cloud_mount/" + UUID.randomUUID().toString();
+        String remoteDir = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/";
+
+        try {
+            String results = callHostPluginAsync(conn, "cloud-plugin-snapshot", "mountNfsSecondaryStorage", wait,
+                    "localDir", localDir, "remoteDir", remoteDir);
+            if (results == null || results.isEmpty()) {
+                errMsg = "Could not mount secondary storage " + remoteDir + " on host " + _host.ip;
+                s_logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+            mounted = true;
+
+            ssSR = createFileSR(conn, localDir, remoteDir);
+            filesrcreated = true;
+
+            VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
+            Task task = null;
+            if (wait == 0) {
+                wait = 2 * 60 * 60;
+            }
+            VDI dvdi = null;
+            try {
+                task = snapshotvdi.copyAsync(conn, ssSR);
+                // uncomment below to enable delta snapshot
+                // task = snapshotvdi.copyAsync(ssr, { "base-src":
+                // snashotPaPaUuid, "base-dst": prevBackupUuid })
+                // poll every 1 seconds ,
+                waitForTask(conn, task, 1000, wait * 1000);
+                checkForSuccess(conn, task);
+                dvdi = Types.toVDI(task, conn);
+                copied = true;
+            } catch (TimeoutException e) {
+                throw new CloudRuntimeException(e.toString());
+            } finally {
+                if (task != null) {
+                    try {
+                        task.destroy(conn);
+                    } catch (Exception e1) {
+                        s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid
+                                + ") due to ", e1);
+                    }
+                }
+            }
+            String backupUuid = dvdi.getUuid(conn);
+            return backupUuid;
+        } catch (Exception e) {
+            String msg = "Exception in backupsnapshot stage due to " + e.toString();
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (filesrcreated && ssSR != null) {
+                    ssSR.forget(conn);
+                }
+                if (mounted) {
+                    String results = callHostPluginAsync(conn, "cloud-plugin-snapshot", "umountNfsSecondaryStorage",
+                            wait, "localDir", localDir);
+                    if (results == null || results.isEmpty()) {
+                        errMsg = "Could not umount secondary storage " + remoteDir + " on host " + _host.ip;
+                        s_logger.debug(errMsg);
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.debug("Exception in backupsnapshot cleanup stage due to " + e.toString());
+            }
+        }
+    }
+
 
     protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, Long dcId, Long accountId,
-            Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait, Long secHostId) {
+            Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String snashotPaPaUuid, String prevBackupUuid, Boolean isISCSI, int wait, Long secHostId) {
         String backupSnapshotUuid = null;
 
         if (prevBackupUuid == null) {
@@ -7387,13 +7486,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
             String snapshotPaUuid = null;
+            String snashotPaPaUuid = null;
             if ( prevBackupUuid != null ) {
                 try {
                     snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
                     if( snapshotPaUuid != null ) {
-                        String snashotPaPaPaUuid = getVhdParent(conn, psUuid, snapshotPaUuid, isISCSI);
+                        snashotPaPaUuid = getVhdParent(conn, psUuid, snapshotPaUuid, isISCSI);
                         String prevSnashotPaUuid = getVhdParent(conn, psUuid, prevSnapshotUuid, isISCSI);
-                        if (snashotPaPaPaUuid != null && prevSnashotPaUuid!= null && prevSnashotPaUuid.equals(snashotPaPaPaUuid)) {
+                        if (snashotPaPaUuid != null && prevSnashotPaUuid!= null && prevSnashotPaUuid.equals(snashotPaPaUuid)) {
                             fullbackup = false;
                         }
                     }
@@ -7449,7 +7549,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else if (cmd.getS3() != null) {
                     backupSnapshotToS3(conn, cmd.getS3(), primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait, secHostId);
+                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, snashotPaPaUuid, prevBackupUuid, isISCSI, wait, secHostId);
                     success = (snapshotBackupUuid != null);
                 }
             }

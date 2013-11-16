@@ -1,4 +1,4 @@
-#!/usr/bin/python
+    #!/usr/bin/python
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -349,7 +349,7 @@ def mountSnapshotsDir(secondaryStorageMountPath, localMountPointPath, path):
         mount(snapshotsDir, localMountPointPath)
 
     # Create accountId/instanceId dir on localMountPointPath, if it doesn't exist
-    backupsDir = os.path.join(localMountPointPath, restDir)
+    backupsDi = os.path.join(localMountPointPath, restDir)
     makedirs(backupsDir)
     return backupsDir
 
@@ -375,6 +375,42 @@ def unmountSnapshotsDir(session, args):
         logging.debug("Ignoring the error while trying to unmount the snapshots dir.")
 
     return "1"
+
+@echo
+def mountNfsSecondaryStorage(session, args):
+    remoteDir = args['remoteDir']
+    localDir  = args]'localDir']
+    makedirs(localDir)
+    options = "soft,tcp,timeo=133,retrans=1"
+    try:
+        cmd = ['mount', '-o', options, remoteDir, localDir]
+        txt = util.pread2(cmd)
+    except:
+        txt = ''
+        errMsg = "Unexpected error while trying to mount " + remoteDir + " to " + localDir
+        logging.debug(errMsg)
+        raise xs_errors.XenError(errMsg)
+    logging.debug("Successfully mounted " + remoteDir + " to " + localDir)
+
+    return
+
+@echo
+def umountNfsSecondaryStorage(session, args):
+    localDir = args['localDir']
+    try:
+        cmd = ['umount', localDir]
+        util.pread2(cmd)
+    except CommandException:
+        errMsg = "CommandException raised while trying to umount " + localDir
+        logging.debug(errMsg)
+        raise xs_errors.XenError(errMsg)
+    try: 
+        os.system("rmdir " + localDir)
+    except:
+        pass
+    logging.debug("Successfully unmounted " + localDir)
+    return
+
 
 def getPrimarySRPath(primaryStorageSRUuid, isISCSI):
     if isISCSI:
@@ -592,6 +628,6 @@ def revert_memory_snapshot(session, args):
     return "0"
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot, "mountNfsSecondaryStorage":mountNfsSecondaryStorage, "umountNfsSecondaryStorage":umountNfsSecondaryStorage})
     
 
