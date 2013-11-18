@@ -83,4 +83,5 @@ public class XenServer620Resource extends XenServer610Resource {
         }
         return dynamicMinRam;
     }
+
 }

@@ -16,6 +16,31 @@
 // under the License.
 package com.cloud.hypervisor.xen.discoverer;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types.SessionAuthenticationFailed;
+import com.xensource.xenapi.Types.XenAPIException;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -74,28 +99,6 @@ import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Types.SessionAuthenticationFailed;
-import com.xensource.xenapi.Types.XenAPIException;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 @Local(value=Discoverer.class)
 public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -448,7 +451,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XenServer602Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0"))
+        else if (prodBrand.equals("XenServer") && (prodVersion.equals("6.2.0") || prodVersion.equals("6.2.50")))
             return new XenServer620Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
             String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
@@ -600,7 +603,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             resource = XenServer602Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0")) {
             resource = XenServer610Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
+        } else if (prodBrand.equals("XenServer") && (prodVersion.equals("6.2.0") || prodVersion.equals("6.2.50"))) {
             resource = XenServer620Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
             String prodVersionTextShort = details.get("product_version_text_short").trim();

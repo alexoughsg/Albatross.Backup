@@ -3608,6 +3608,50 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected void waitForTask2(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
+        long beginTime = System.currentTimeMillis();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
+                           "ms timeout");
+        }
+        Set<String> classes = new HashSet<String>();
+        classes.add("Task/" + task.toString());
+        String token = "";
+        Double t = new Double(timeout / 1000);
+        while (true) {
+            Map<?, ?> map = Event.properFrom(c, classes, token, t);
+            token = (String)map.get("token");
+            @SuppressWarnings("unchecked")
+            Set<Event.Record> events = (Set<Event.Record>)map.get("events");
+            if (events.size() == 0) {
+                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                s_logger.warn(msg);
+                task.cancel(c);
+                throw new TimeoutException(msg);
+            }
+            for (Event.Record rec : events) {
+                if (!(rec.snapshot instanceof Task.Record)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Skipping over " + rec);
+                    }
+                    continue;
+                }
+                
+                Task.Record taskRecord = (Task.Record)rec.snapshot;
+            
+                
+                if (taskRecord.status != Types.TaskStatusType.PENDING) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Task is done " + taskRecord.status);
+                    }
+                    return;
+                } else {
+                    s_logger.debug("Task is not done " + taskRecord);
+                }
+            }
+        }
+    }
+
     protected void checkForSuccess(Connection c, Task task) throws XenAPIException, XmlRpcException {
         if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
             if (s_logger.isTraceEnabled()) {
@@ -3628,7 +3672,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             task = vm.cleanRebootAsync(conn);
             try {
                 //poll every 1 seconds , timeout after 10 minutes
-         		waitForTask(conn, task, 1000, 10 * 60 * 1000);
+                waitForTask(conn, task, 1000, 10 * 60 * 1000);
                 checkForSuccess(conn, task);
             } catch (Types.HandleInvalid e) {
                 if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
@@ -3934,10 +3978,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             VDI dvdi = null;
             try {
-                task = snapshotvdi.copyAsync(conn, ssSR);
+//                task = snapshotvdi.copyAsync(conn, ssSR);
                 // uncomment below to enable delta snapshot
-                // task = snapshotvdi.copyAsync(ssr, { "base-src":
-                // snashotPaPaUuid, "base-dst": prevBackupUuid })
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("base-src",  snashotPaPaUuid);
+                params.put("base-dst", prevBackupUuid);
+                task = snapshotvdi.copyDaveAsync(conn, ssSR, params);
                 // poll every 1 seconds ,
                 waitForTask(conn, task, 1000, wait * 1000);
                 checkForSuccess(conn, task);
@@ -7549,7 +7595,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else if (cmd.getS3() != null) {
                     backupSnapshotToS3(conn, cmd.getS3(), primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, snashotPaPaUuid, prevBackupUuid, isISCSI, wait, secHostId);
+                    snapshotBackupUuid = backupSnapshot2(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, snashotPaPaUuid,
+                        prevBackupUuid, isISCSI, wait, secHostId);
                     success = (snapshotBackupUuid != null);
                 }
             }
