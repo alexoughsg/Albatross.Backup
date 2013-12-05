@@ -3983,7 +3983,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 Map<String,String> params = new HashMap<String, String>();
                 params.put("base-src",  snashotPaPaUuid);
                 params.put("base-dst", prevBackupUuid);
-                task = snapshotvdi.copyDaveAsync(conn, ssSR, params);
+                //task = snapshotvdi.copyDaveAsync(conn, ssSR, params);
                 // poll every 1 seconds ,
                 waitForTask(conn, task, 1000, wait * 1000);
                 checkForSuccess(conn, task);

@@ -29,22 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
+import com.xensource.xenapi.*;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -1109,46 +1101,84 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     }
 
-    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String localMountPoint, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
-        String backupSnapshotUuid = null;
-
+    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String localMountPoint, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, String prevSnapshotUuid, Boolean isISCSI, int wait) {
+        String errMsg = null;
+        boolean mounted = false;
+        boolean filesrcreated = false;
+        boolean copied = false;
         if (prevBackupUuid == null) {
             prevBackupUuid = "";
         }
+        SR ssSR = null;
+        String localDir = "/var/cloud_mount/" + UUID.randomUUID().toString();
+        String remoteDir = secondaryStorageMountPath + File.separator + path;
 
-        // Each argument is put in a separate line for readability.
-        // Using more lines does not harm the environment.
-        String backupUuid = UUID.randomUUID().toString();
-        String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-snapshot", "backupSnapshot", wait,
-                "primaryStorageSRUuid", primaryStorageSRUuid, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath,
-                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString(), "localMountPoint", localMountPoint);
-        String errMsg = null;
-        if (results == null || results.isEmpty()) {
-            errMsg = "Could not copy backupUuid: " + backupSnapshotUuid
-                    + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
-                    + secondaryStorageMountPath + " due to null";
-        } else {
+        try {
+            String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-snapshot", "mountNfsSecondaryStorage", wait,
+                    "localDir", localDir, "remoteDir", remoteDir);
+            if (results == null || results.isEmpty()) {
+                errMsg = "Could not mount secondary storage " + remoteDir;
+                s_logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+            mounted = true;
 
-            String[] tmp = results.split("#");
-            String status = tmp[0];
-            backupSnapshotUuid = tmp[1];
-            // status == "1" if and only if backupSnapshotUuid != null
-            // So we don't rely on status value but return backupSnapshotUuid as an
-            // indicator of success.
-            if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
-                s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid
-                        + " to secondary storage");
-                return backupSnapshotUuid;
-            } else {
-                errMsg = "Could not copy backupUuid: " + backupSnapshotUuid
-                        + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
-                        + secondaryStorageMountPath + " due to " + tmp[1];
+            ssSR = hypervisorResource.createFileSR(conn, localDir, remoteDir);
+            filesrcreated = true;
+
+            VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
+            Task task = null;
+            if (wait == 0) {
+                wait = 2 * 60 * 60;
+            }
+            VDI dvdi = null;
+            try {
+                Map<String,Object> params = new HashMap<String, Object>();
+                if (prevSnapshotUuid != null) {
+                    VDI previousSnapshotVdi = VDI.getByUuid(conn,prevSnapshotUuid);
+                    params.put("base-vdi",  previousSnapshotVdi);
+                }
+                task = snapshotvdi.copyV2Async(conn, ssSR, params);
+                // poll every 1 seconds ,
+                hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
+                hypervisorResource.checkForSuccess(conn, task);
+                dvdi = Types.toVDI(task, conn);
+                copied = true;
+            } catch (TimeoutException e) {
+                throw new CloudRuntimeException(e.toString());
+            } finally {
+                if (task != null) {
+                    try {
+                        task.destroy(conn);
+                    } catch (Exception e1) {
+                        s_logger.warn("unable to destroy task(" + task.toString() + ") on host("
+                                + ") due to ", e1);
+                    }
+                }
+            }
+            String backupUuid = dvdi.getUuid(conn);
+            return backupUuid;
+        } catch (Exception e) {
+            String msg = "Exception in backupsnapshot stage due to " + e.toString();
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (filesrcreated && ssSR != null) {
+                    ssSR.forget(conn);
+                }
+                if (mounted) {
+                    String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-snapshot", "umountNfsSecondaryStorage",
+                            wait, "localDir", localDir);
+                    if (results == null || results.isEmpty()) {
+                        errMsg = "Could not umount secondary storage " + remoteDir + " on host ";
+                        s_logger.debug(errMsg);
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.debug("Exception in backupsnapshot cleanup stage due to " + e.toString());
             }
         }
-        String source = backupUuid + ".vhd";
-        hypervisorResource.killCopyProcess(conn, source);
-        s_logger.warn(errMsg);
-        throw new CloudRuntimeException(errMsg);
     }
 
     private boolean destroySnapshotOnPrimaryStorageExceptThis(Connection conn, String volumeUuid, String avoidSnapshotUuid){
@@ -1310,7 +1340,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     }
                 } else {
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
-                            secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
+                            secondaryStorageMountPath, snapshotUuid, prevBackupUuid, prevSnapshotUuid, isISCSI, wait);
 
                     finalPath = folder + File.separator + snapshotBackupUuid;
                 }

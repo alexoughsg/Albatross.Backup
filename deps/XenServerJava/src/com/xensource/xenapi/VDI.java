@@ -1614,7 +1614,7 @@ public class VDI extends XenAPIObject {
         return Types.toTask(result);
     }
 
-    public Task copyDaveAsync(Connection c, SR sr, Map<String, String> params) throws BadServerResponse, XenAPIException, XmlRpcException {
+    public Task copyV2Async(Connection c, SR sr, Map<String, Object> params) throws BadServerResponse, XenAPIException, XmlRpcException {
         String method_call = "Async.VDI.copy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(ref), Marshalling.toXMLRPC(sr), Marshalling.toXMLRPC(params)};
