@@ -24,13 +24,15 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
+
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 
 @Local(value=ServerResource.class)
-public class XenServer620Resource extends XenServer610Resource {
+public class XenServer620Resource extends XenServerResourceNewBase {
     private static final Logger s_logger = Logger.getLogger(XenServer620Resource.class);
 
     public XenServer620Resource() {
