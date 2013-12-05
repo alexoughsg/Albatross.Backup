@@ -3798,7 +3798,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             wait = 2 * 60 * 60;
         }
         try {
-            task = vdi.copyAsync(conn, sr);
+            //task = vdi.copyAsync(conn, sr);
             // poll every 1 seconds , timeout after 2 hours
             waitForTask(conn, task, 1000, wait * 1000);
             checkForSuccess(conn, task);

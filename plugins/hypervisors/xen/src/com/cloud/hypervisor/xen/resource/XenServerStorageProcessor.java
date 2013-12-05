@@ -1133,12 +1133,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
             }
             VDI dvdi = null;
             try {
-                Map<String,Object> params = new HashMap<String, Object>();
+                VDI previousSnapshotVdi = null;
                 if (prevSnapshotUuid != null) {
-                    VDI previousSnapshotVdi = VDI.getByUuid(conn,prevSnapshotUuid);
-                    params.put("base-vdi",  previousSnapshotVdi);
+                    previousSnapshotVdi = VDI.getByUuid(conn,prevSnapshotUuid);
                 }
-                task = snapshotvdi.copyV2Async(conn, ssSR, params);
+                task = snapshotvdi.copyAsync(conn, ssSR, previousSnapshotVdi, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
