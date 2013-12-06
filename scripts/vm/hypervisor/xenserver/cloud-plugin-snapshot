@@ -1,4 +1,4 @@
-    #!/usr/bin/python
+#!/usr/bin/python
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -349,7 +349,7 @@ def mountSnapshotsDir(secondaryStorageMountPath, localMountPointPath, path):
         mount(snapshotsDir, localMountPointPath)
 
     # Create accountId/instanceId dir on localMountPointPath, if it doesn't exist
-    backupsDi = os.path.join(localMountPointPath, restDir)
+    backupsDir = os.path.join(localMountPointPath, restDir)
     makedirs(backupsDir)
     return backupsDir
 
@@ -379,7 +379,7 @@ def unmountSnapshotsDir(session, args):
 @echo
 def mountNfsSecondaryStorage(session, args):
     remoteDir = args['remoteDir']
-    localDir  = args]'localDir']
+    localDir  = args['localDir']
     makedirs(localDir)
     options = "soft,tcp,timeo=133,retrans=1"
     try:

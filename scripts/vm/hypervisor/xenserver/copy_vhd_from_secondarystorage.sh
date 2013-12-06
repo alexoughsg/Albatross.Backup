@@ -89,7 +89,7 @@ fi
 
 
 
-VHDUTIL="/opt/xensource/bin/vhd-util"
+VHDUTIL="vhd-util"
 
 copyvhd()
 {
