@@ -31,13 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import com.xensource.xenapi.*;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.XenAPIException;
-
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
@@ -54,6 +47,8 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -76,6 +71,19 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -1111,7 +1119,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
         SR ssSR = null;
         String localDir = "/var/cloud_mount/" + UUID.randomUUID().toString();
-        String remoteDir = secondaryStorageMountPath + File.separator + path;
+        String remoteDir = secondaryStorageMountPath;
 
         try {
             String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-snapshot", "mountNfsSecondaryStorage", wait,
@@ -1121,9 +1129,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 s_logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-            mounted = true;
 
-            ssSR = hypervisorResource.createFileSR(conn, localDir, remoteDir);
+            ssSR = hypervisorResource.createFileSR(conn, localDir + "/" + path);
             filesrcreated = true;
 
             VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
@@ -1164,15 +1171,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
         } finally {
             try {
                 if (filesrcreated && ssSR != null) {
+                    Set<PBD> pbds = ssSR.getPBDs(conn);
+                    PBD pbd = pbds.iterator().next();
+                    pbd.unplug(conn);
                     ssSR.forget(conn);
-                }
-                if (mounted) {
-                    String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-snapshot", "umountNfsSecondaryStorage",
-                            wait, "localDir", localDir);
-                    if (results == null || results.isEmpty()) {
-                        errMsg = "Could not umount secondary storage " + remoteDir + " on host ";
-                        s_logger.debug(errMsg);
-                    }
                 }
             } catch (Exception e) {
                 s_logger.debug("Exception in backupsnapshot cleanup stage due to " + e.toString());

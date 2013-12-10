@@ -380,6 +380,16 @@ def unmountSnapshotsDir(session, args):
 def mountNfsSecondaryStorage(session, args):
     remoteDir = args['remoteDir']
     localDir  = args['localDir']
+    mounted = False
+    f = open("/proc/mounts", 'r')
+    for line in f:
+        tokens = line.split(" ")
+        if len(tokens) > 2 and tokens[0] == remoteDir and tokens[1] == localDir:
+            mounted = True
+
+    if mounted:
+        return "true"
+
     makedirs(localDir)
     options = "soft,tcp,timeo=133,retrans=1"
     try:
@@ -392,7 +402,7 @@ def mountNfsSecondaryStorage(session, args):
         raise xs_errors.XenError(errMsg)
     logging.debug("Successfully mounted " + remoteDir + " to " + localDir)
 
-    return
+    return "true"
 
 @echo
 def umountNfsSecondaryStorage(session, args):
@@ -409,7 +419,7 @@ def umountNfsSecondaryStorage(session, args):
     except:
         pass
     logging.debug("Successfully unmounted " + localDir)
-    return
+    return "true"
 
 
 def getPrimarySRPath(primaryStorageSRUuid, isISCSI):

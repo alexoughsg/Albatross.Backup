@@ -3876,18 +3876,39 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return lfilename;
     }
 
-    protected SR createFileSR(Connection conn, String path, String location) {
+    protected SR createFileSR(Connection conn, String path) {
+        SR sr = null;
+        PBD pbd = null;
         try {
             Map<String, String> smConfig = new HashMap<String, String>();
-            smConfig.put("location", path);
             Host host = Host.getByUuid(conn, _host.uuid);
             String uuid = UUID.randomUUID().toString();
 
-            SR sr = SR.introduce(conn,uuid, uuid, uuid, "file", "file", false, smConfig);
-
-            //sr.scan(conn);
+            sr = SR.introduce(conn,uuid, uuid, uuid, "file", "file", false, smConfig);
+            PBD.Record record = new PBD.Record();
+            record.host = host;
+            record.SR = sr;
+            smConfig.put("location", path);
+            record.deviceConfig = smConfig;
+            pbd = PBD.create(conn, record);
+            pbd.plug(conn);
+            sr.scan(conn);
             return sr;
         } catch (Exception e) {
+            try {
+                if (pbd != null) {
+                    pbd.destroy(conn);
+                }
+            } catch (Exception e1) {
+                s_logger.debug("Failed to destroy pbd", e);
+            }
+            try {
+                if (sr != null) {
+                    sr.forget(conn);
+                }
+            } catch (Exception e2) {
+                s_logger.error("Failed to forget sr", e);
+            }
             String msg = "createFileSR failed! due to " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg, e);
@@ -3918,7 +3939,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             mounted = true;
 
-            ssSR = createFileSR(conn, localDir, remoteDir);
             filesrcreated = true;
 
             VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
