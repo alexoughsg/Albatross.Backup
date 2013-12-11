@@ -16,13 +16,16 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import java.util.ArrayList;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.commons.lang.ArrayUtils;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 public class SnapshotObjectTO implements DataTO {
     private String path;
@@ -32,6 +35,7 @@ public class SnapshotObjectTO implements DataTO {
     private String vmName;
     private String name;
     private HypervisorType hypervisorType;
+    private SnapshotObjectTO[] parents;
     private long id;
 
     public SnapshotObjectTO() {
@@ -48,9 +52,17 @@ public class SnapshotObjectTO implements DataTO {
         }
 
         SnapshotInfo parentSnapshot = snapshot.getParent();
+        ArrayList<SnapshotObjectTO> parentsArry = new ArrayList<SnapshotObjectTO>();
         if (parentSnapshot != null) {
             this.parentSnapshotPath = parentSnapshot.getPath();
+            while(parentSnapshot != null) {
+                parentsArry.add((SnapshotObjectTO)parentSnapshot.getTO());
+                parentSnapshot = parentSnapshot.getParent();
+            }
+            parents =  parentsArry.toArray(new SnapshotObjectTO[parentsArry.size()]);
+            ArrayUtils.reverse(parents);
         }
+
         this.dataStore = snapshot.getDataStore().getTO();
         this.setName(snapshot.getName());
         this.hypervisorType = snapshot.getHypervisorType();
@@ -127,6 +139,10 @@ public class SnapshotObjectTO implements DataTO {
 
     public void setHypervisorType(HypervisorType hypervisorType) {
         this.hypervisorType = hypervisorType;
+    }
+
+    public SnapshotObjectTO[] getParents() {
+        return parents;
     }
 
     @Override
