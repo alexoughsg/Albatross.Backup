@@ -272,7 +272,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         # Get the Secondary Storage details from  list Hosts
         hosts = list_hosts(
                                  self.apiclient,
-                                 type='SecondaryStorage',
+                                 type='SecondaryStorageVM',
                                  zoneid=self.zone.id
                                  )
         self.assertEqual(
