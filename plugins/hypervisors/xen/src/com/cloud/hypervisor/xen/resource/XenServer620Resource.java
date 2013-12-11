@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -84,6 +86,12 @@ public class XenServer620Resource extends XenServerResourceNewBase {
             s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
         }
         return dynamicMinRam;
+    }
+
+    @Override
+    protected StorageSubsystemCommandHandler getStorageHandler() {
+        XenServerStorageProcessor processor = new Xenserver620StorageProcessor(this);
+        return new StorageSubsystemCommandHandlerBase(processor);
     }
 
 }
