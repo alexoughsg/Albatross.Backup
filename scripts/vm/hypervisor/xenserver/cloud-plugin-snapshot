@@ -298,6 +298,20 @@ def makedirs(path):
             raise xs_errors.XenError(errMsg)
     return
 
+@echo
+def makeDirectory(session, args):
+    path = args['path']
+    if not os.path.isdir(path):
+        try:
+            os.makedirs(path)
+        except OSError, (errno, strerror):
+            if os.path.isdir(path):
+                return "true"
+            errMsg = "OSError while creating " + path + " with errno: " + str(errno) + " and strerr: " + strerror
+            logging.debug(errMsg)
+            raise xs_errors.XenError(errMsg)
+    return "true"
+
 def mount(remoteDir, localDir):
     makedirs(localDir)
     options = "soft,tcp,timeo=133,retrans=1"
@@ -638,6 +652,6 @@ def revert_memory_snapshot(session, args):
     return "0"
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot, "mountNfsSecondaryStorage":mountNfsSecondaryStorage, "umountNfsSecondaryStorage":umountNfsSecondaryStorage})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot, "mountNfsSecondaryStorage":mountNfsSecondaryStorage, "umountNfsSecondaryStorage":umountNfsSecondaryStorage, "makeDirectory":makeDirectory})
     
 

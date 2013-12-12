@@ -27,11 +27,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
-import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -39,14 +44,16 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
@@ -55,6 +62,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     HostDao hostDao;
     private String findOneHostOnPrimaryStorage = "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and" +
             " h.id = s.host_id and s.pool_id = ? ";
+    private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
@@ -306,5 +314,53 @@ public class DefaultEndPointSelector implements EndPointSelector {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
         return endPoints;
+    }
+
+    @Override
+    public EndPoint selectHypervisorHost(Scope scope) {
+        StringBuilder sbuilder = new StringBuilder();
+        sbuilder.append(findOneHypervisorHostInScope);
+        if (scope.getScopeType() == ScopeType.ZONE) {
+            sbuilder.append(" and h.data_center_id = ");
+            sbuilder.append(scope.getScopeId());
+        } else if (scope.getScopeType() == ScopeType.CLUSTER) {
+            sbuilder.append(" and h.cluster_id = ");
+            sbuilder.append(scope.getScopeId());
+        }
+        sbuilder.append(" ORDER by rand() limit 1");
+
+        String sql = sbuilder.toString();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        HostVO host = null;
+        Transaction txn = Transaction.currentTxn();
+
+        try {
+            pstmt = txn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                host = hostDao.findById(id);
+            }
+        } catch (SQLException e) {
+            s_logger.warn("can't find endpoint", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+        if (host == null) {
+            return null;
+        }
+
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
+                host.getPublicIpAddress());
     }
 }
