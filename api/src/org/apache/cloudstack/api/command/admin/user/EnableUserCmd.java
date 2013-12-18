@@ -34,6 +34,8 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
+import java.util.Date;
+
 @APICommand(name = "enableUser", description = "Enables a user account", responseObject = UserResponse.class)
 public class EnableUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
@@ -46,6 +48,11 @@ public class EnableUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "Enables user by user ID.")
     private Long id;
 
+    @Parameter(name = ApiConstants.MODIFIED,
+            type = CommandType.DATE,
+            description = "Last modified date time")
+    private Date modified;
+
     @Inject
     RegionService _regionService;
 
@@ -56,6 +63,8 @@ public class EnableUserCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
+
+    public Date getModified() { return modified; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

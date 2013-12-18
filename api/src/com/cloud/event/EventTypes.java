@@ -150,6 +150,7 @@ public class EventTypes {
     public static final String EVENT_ACCOUNT_DELETE = "ACCOUNT.DELETE";
     public static final String EVENT_ACCOUNT_UPDATE = "ACCOUNT.UPDATE";
     public static final String EVENT_ACCOUNT_MARK_DEFAULT_ZONE = "ACCOUNT.MARK.DEFAULT.ZONE";
+    public static final String EVENT_ACCOUNT_LOCK = "ACCOUNT.LOCK";
 
     // UserVO Events
     public static final String EVENT_USER_LOGIN = "USER.LOGIN";
@@ -524,6 +525,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ACCOUNT_CREATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DELETE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_MARK_DEFAULT_ZONE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_ENABLE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_LOCK, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_UPDATE, Account.class.getName());
 
         // UserVO Events
         entityEventDetails.put(EVENT_USER_LOGIN, User.class.getName());

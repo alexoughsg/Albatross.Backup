@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.Date;
+import java.util.TimeZone;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -37,6 +39,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -507,31 +510,43 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private boolean doSetUserStatus(long userId, State state) {
+    private boolean doSetUserStatus(long userId, State state, Date modified) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setState(state);
+        userForUpdate.setModified(modified);
         return _userDao.update(Long.valueOf(userId), userForUpdate);
     }
 
+    private Date getModified(Date modified)
+    {
+        if (modified != null)   return modified;
+        TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
+        return DateUtil.parseDateString(s_gmtTimeZone, DateUtil.getDateDisplayString(s_gmtTimeZone, new Date()));
+    }
+
     @Override
-    public boolean enableAccount(long accountId) {
+    public boolean enableAccount(long accountId, Date modifiedDate) {
         boolean success = false;
+        Date modified = getModified(modifiedDate);
         AccountVO acctForUpdate = _accountDao.createForUpdate();
         acctForUpdate.setState(State.enabled);
         acctForUpdate.setNeedsCleanup(false);
+        acctForUpdate.setModified(modified);
         success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
         return success;
     }
 
-    protected boolean lockAccount(long accountId) {
+    protected boolean lockAccount(long accountId, Date modifiedDate) {
         boolean success = false;
         Account account = _accountDao.findById(accountId);
         if (account != null) {
             if (account.getState().equals(State.locked)) {
                 return true; // already locked, no-op
             } else if (account.getState().equals(State.enabled)) {
+                Date modified = getModified(modifiedDate);
                 AccountVO acctForUpdate = _accountDao.createForUpdate();
                 acctForUpdate.setState(State.locked);
+                acctForUpdate.setModified(modified);
                 success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
             } else {
                 if (s_logger.isInfoEnabled()) {
@@ -797,7 +812,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean disableAccount(long accountId, Date modifiedDate) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean success = false;
         if (accountId <= 2) {
             if (s_logger.isInfoEnabled()) {
@@ -810,8 +825,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if ((account == null) || (account.getState().equals(State.disabled) && !account.getNeedsCleanup())) {
             success = true;
         } else {
+            Date modified = getModified(modifiedDate);
             AccountVO acctForUpdate = _accountDao.createForUpdate();
             acctForUpdate.setState(State.disabled);
+            acctForUpdate.setModified(modified);
             success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
 
             if (success) {
@@ -998,6 +1015,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         String secretKey = cmd.getSecretKey();
         String timeZone = cmd.getTimezone();
         String userName = cmd.getUsername();
+        Date modified = getModified(cmd.getModified());
 
         // Input validation
         UserVO user = _userDao.getUser(id);
@@ -1009,6 +1027,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if ((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null)) {
             throw new InvalidParameterValueException("Please provide an userApiKey/userSecretKey pair");
         }
+
+        String currentUserName = user.getUsername();
 
         // If the account is an admin type, return an error. We do not allow this
         Account account = _accountDao.findById(user.getAccountId());
@@ -1085,6 +1105,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             user.setSecretKey(secretKey);
         }
 
+        user.setModified(modified);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("updating user with id: " + id);
         }
@@ -1110,13 +1132,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         CallContext.current().putContextParameter(User.class, user.getUuid());
+        CallContext.current().putContextParameter(user.getUuid(), currentUserName);
 
         return _userAccountDao.findById(id);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DISABLE, eventDescription = "disabling User", async = true)
-    public UserAccount disableUser(long userId) {
+    public UserAccount disableUser(long userId, Date modifiedDate) {
         Account caller = CallContext.current().getCallingAccount();
 
         // Check if user exists in the system
@@ -1139,7 +1162,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, account);
 
-        boolean success = doSetUserStatus(userId, State.disabled);
+        Date modified = getModified(modifiedDate);
+        boolean success = doSetUserStatus(userId, State.disabled, modified);
         if (success) {
 
             CallContext.current().putContextParameter(User.class, user.getUuid());
@@ -1154,7 +1178,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
-    public UserAccount enableUser(final long userId) {
+    public UserAccount enableUser(final long userId, Date modifiedDate) {
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -1177,13 +1201,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, account);
 
+        final Date modified = getModified(modifiedDate);
         boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                boolean success = doSetUserStatus(userId, State.enabled);
+                boolean success = doSetUserStatus(userId, State.enabled, modified);
 
                 // make sure the account is enabled too
-                success = success && enableAccount(user.getAccountId());
+                success = success && enableAccount(user.getAccountId(), modified);
 
                 return success;
             }
@@ -1203,7 +1228,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_LOCK, eventDescription = "locking User")
-    public UserAccount lockUser(long userId) {
+    public UserAccount lockUser(long userId, Date modifiedDate) {
         Account caller = CallContext.current().getCallingAccount();
 
         // Check if user with id exists in the system
@@ -1234,7 +1259,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // already locked...no-op
             return _userAccountDao.findById(userId);
         } else if (user.getState().equals(State.enabled)) {
-            success = doSetUserStatus(user.getId(), State.locked);
+            Date modified = getModified(modifiedDate);
+            success = doSetUserStatus(user.getId(), State.locked, modified);
 
             boolean lockAccount = true;
             List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
@@ -1246,7 +1272,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             if (lockAccount) {
-                success = (success && lockAccount(user.getAccountId()));
+                success = (success && lockAccount(user.getAccountId(), modified));
             }
         } else {
             if (s_logger.isInfoEnabled()) {
@@ -1313,7 +1339,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_ENABLE, eventDescription = "enabling account", async = true)
-    public AccountVO enableAccount(String accountName, Long domainId, Long accountId) {
+    public AccountVO enableAccount(String accountName, Long domainId, Long accountId, Date modifiedDate) {
 
         // Check if account exists
         Account account = null;
@@ -1335,7 +1361,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account caller = CallContext.current().getCallingAccount();
         checkAccess(caller, null, true, account);
 
-        boolean success = enableAccount(account.getId());
+        Date modified = getModified(modifiedDate);
+        boolean success = enableAccount(account.getId(), modified);
         if (success) {
 
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -1347,8 +1374,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "locking account", async = true)
-    public AccountVO lockAccount(String accountName, Long domainId, Long accountId) {
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_LOCK, eventDescription = "locking account", async = true)
+    public AccountVO lockAccount(String accountName, Long domainId, Long accountId, Date modifiedDate) {
         Account caller = CallContext.current().getCallingAccount();
 
         Account account = null;
@@ -1369,7 +1396,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, account);
 
-        if (lockAccount(account.getId())) {
+        Date modified = getModified(modifiedDate);
+        if (lockAccount(account.getId(), modified)) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
@@ -1379,7 +1407,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async = true)
-    public AccountVO disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public AccountVO disableAccount(String accountName, Long domainId, Long accountId, Date modifiedDate) throws ConcurrentOperationException, ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();
 
         Account account = null;
@@ -1399,7 +1427,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, account);
 
-        if (disableAccount(account.getId())) {
+        Date modified = getModified(modifiedDate);
+        if (disableAccount(account.getId(), modified)) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
@@ -1417,6 +1446,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
         final Map<String, String> details = cmd.getDetails();
+        Date modified = getModified(cmd.getModified());
 
         boolean success = false;
         Account account = null;
@@ -1471,6 +1501,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
+        acctForUpdate.setModified(modified);
+
         final Account accountFinal = account;
         success = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
@@ -1487,6 +1519,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (success) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
+            CallContext.current().putContextParameter(account.getUuid(), accountName);  // store the old name for multi-region support
             return _accountDao.findById(account.getId());
         } else {
             throw new CloudRuntimeException("Unable to update account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
@@ -1551,7 +1584,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     for (AccountVO account : disabledAccounts) {
                         s_logger.debug("Disabling account " + account.getId());
                         try {
-                            disableAccount(account.getId());
+                            disableAccount(account.getId(), null);
                         } catch (Exception e) {
                             s_logger.error("Skipping due to error on account " + account.getId(), e);
                         }

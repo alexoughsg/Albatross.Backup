@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -46,6 +47,7 @@ public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
 
     private static EventDao s_eventDao;
+    private static DomainDao s_domainDao;
     private static AccountDao s_accountDao;
     protected static UserDao s_userDao;
     protected static EventBus s_eventBus = null;
@@ -59,6 +61,8 @@ public class ActionEventUtils {
     @Inject
     EventDao eventDao;
     @Inject
+    DomainDao domainDao;
+    @Inject
     AccountDao accountDao;
     @Inject
     UserDao userDao;
@@ -69,6 +73,7 @@ public class ActionEventUtils {
     @PostConstruct
     void init() {
         s_eventDao = eventDao;
+        s_domainDao = domainDao;
         s_accountDao = accountDao;
         s_userDao = userDao;
     }
@@ -122,6 +127,8 @@ public class ActionEventUtils {
 
     public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
 
+        description = addDescription(EventCategory.ACTION_EVENT.getName(), type, description);
+
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
 
         Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, description, startEventId);
@@ -171,13 +178,17 @@ public class ActionEventUtils {
         // get the entity details for which ActionEvent is generated
         String entityType = null;
         String entityUuid = null;
+        String oldEntityName = null;
         Class entityKey = getEntityKey(eventType);
         if (entityKey != null)
         {
             CallContext context = CallContext.current();
             entityUuid = (String)context.getContextParameter(entityKey);
             if (entityUuid != null)
+            {
                 entityType = entityKey.getName();
+                oldEntityName = (String)context.getContextParameter(entityUuid);
+            }
         }
 
         org.apache.cloudstack.framework.events.Event event =
@@ -198,6 +209,7 @@ public class ActionEventUtils {
         eventDescription.put("entity", entityType);
         eventDescription.put("entityuuid", entityUuid);
         eventDescription.put("description", description);
+        eventDescription.put("oldentityname", oldEntityName);
 
         String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
@@ -236,5 +248,65 @@ public class ActionEventUtils {
         }
 
         return null;
+    }
+
+    private static String addDescription(String eventCategory, String eventType, String description)
+    {
+        if (!eventCategory.equals("ActionEvent"))   return description;
+        if (!eventType.endsWith(".CREATE") && !eventType.endsWith(".DELETE"))    return description;
+
+        Class entityKey = getEntityKey(eventType);
+        if (entityKey == null)  return description;
+
+        CallContext context = CallContext.current();
+        String entityUuid = (String)context.getContextParameter(entityKey);
+        if (entityUuid == null) return description;
+
+        s_logger.info("description before addition : " + description);
+
+        if (eventType.startsWith("DOMAIN."))
+        {
+            Domain domain = s_domainDao.findByUuidIncludingRemoved(entityUuid);
+            Domain parentDomain = s_domainDao.findByIdIncludingRemoved(domain.getParent());
+            if (eventType.endsWith(".CREATE"))
+            {
+                description += ", Parent Domain Name:" + parentDomain.getName();
+            }
+            else
+            {
+                description += ", Domain Name:" + domain.getName() + ", Parent Domain Name:" + parentDomain.getName();
+            }
+        }
+        else if (eventType.startsWith("ACCOUNT."))
+        {
+            Account account = s_accountDao.findByUuidIncludingRemoved(entityUuid);
+            Domain domain = s_domainDao.findById(account.getDomainId());
+            if (eventType.endsWith(".CREATE"))
+            {
+                description += ", Domain Name:" + domain.getName();
+            }
+            else
+            {
+                description += ", Account Name:" + account.getAccountName() + ", Domain Name:" + domain.getName();
+            }
+        }
+        else if (eventType.startsWith("USER."))
+        {
+            User user = s_userDao.findByUuidIncludingRemoved(entityUuid);
+            Account account = s_accountDao.findById(user.getAccountId());
+            Domain domain = s_domainDao.findById(account.getDomainId());
+            if (eventType.endsWith(".CREATE"))
+            {
+                description += ", Account Name:" + account.getAccountName() + ", Domain Name:" + domain.getName();
+            }
+            else
+            {
+                description += ", User Name:" + user.getUsername() + ", Account Name:" + account.getAccountName() + ", Domain Name:" + domain.getName();
+            }
+        }
+
+        s_logger.info("description after addition : " + description);
+
+        return description;
     }
 }

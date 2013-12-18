@@ -73,6 +73,9 @@ public class DomainVO implements Domain {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = GenericDao.MODIFIED_COLUMN)
+    private Date modified;
+
     public DomainVO() {
     }
 
@@ -209,5 +212,9 @@ public class DomainVO implements Domain {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public Date getModified() { return modified; }
+
+    public void setModified(Date modified) { this.modified = modified; }
 
 }

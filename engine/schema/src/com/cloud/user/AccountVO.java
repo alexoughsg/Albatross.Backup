@@ -69,6 +69,9 @@ public class AccountVO implements Account {
     @Column(name = "default")
     boolean isDefault;
 
+    @Column(name = GenericDao.MODIFIED_COLUMN)
+    private Date modified;
+
     public AccountVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -186,4 +189,8 @@ public class AccountVO implements Account {
     public boolean isDefault() {
         return isDefault;
     }
+
+    public Date getModified() { return modified; }
+
+    public void setModified(Date modified) { this.modified = modified; }
 }

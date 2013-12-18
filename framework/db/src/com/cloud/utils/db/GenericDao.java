@@ -39,6 +39,11 @@ public interface GenericDao<T, ID extends Serializable> {
     static final String CREATED_COLUMN = "created";
 
     /**
+     * This column can be used if the table wants to track modified time.
+     */
+    static final String MODIFIED_COLUMN = "modified";
+
+    /**
      */
     static final String XID_COLUMN = "xid";
 

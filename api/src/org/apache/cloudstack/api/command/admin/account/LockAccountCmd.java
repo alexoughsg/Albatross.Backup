@@ -27,6 +27,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 
 import com.cloud.user.Account;
 
+import java.util.Date;
+
 @APICommand(name = "lockAccount", description = "Locks an account", responseObject = AccountResponse.class)
 public class LockAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
@@ -47,6 +49,11 @@ public class LockAccountCmd extends BaseCmd {
                description = "Locks the specified account on this domain.")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.MODIFIED,
+            type = CommandType.DATE,
+            description = "Last modified date time")
+    private Date modified;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -58,6 +65,8 @@ public class LockAccountCmd extends BaseCmd {
     public Long getDomainId() {
         return domainId;
     }
+
+    public Date getModified() { return modified; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

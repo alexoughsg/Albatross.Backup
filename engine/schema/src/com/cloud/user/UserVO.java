@@ -97,6 +97,9 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "default")
     boolean isDefault;
 
+    @Column(name = GenericDao.MODIFIED_COLUMN)
+    private Date modified;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -270,4 +273,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         return isDefault;
     }
 
+    public Date getModified() { return modified; }
+
+    public void setModified(Date modified) { this.modified = modified; }
 }

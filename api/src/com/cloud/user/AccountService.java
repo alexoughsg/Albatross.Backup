@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -64,7 +65,7 @@ public interface AccountService {
      * @param userId
      * @return UserAccount object
      */
-    UserAccount lockUser(long userId);
+    UserAccount lockUser(long userId, Date modified);
 
     Account getSystemAccount();
 

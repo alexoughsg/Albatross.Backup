@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -56,19 +57,19 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount disableUser(long userId) {
+    public UserAccount disableUser(long userId, Date modifiedDate) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount enableUser(long userId) {
+    public UserAccount enableUser(long userId, Date modifiedDate) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount lockUser(long userId) {
+    public UserAccount lockUser(long userId, Date modifiedDate) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -80,19 +81,19 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public Account disableAccount(String accountName, Long domainId, Long accountId, Date modifiedDate) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account enableAccount(String accountName, Long domainId, Long accountId) {
+    public Account enableAccount(String accountName, Long domainId, Long accountId, Date modifiedDate) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account lockAccount(String accountName, Long domainId, Long accountId) {
+    public Account lockAccount(String accountName, Long domainId, Long accountId, Date modifiedDate) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -180,7 +181,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean disableAccount(long accountId, Date modifiedDate) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -245,7 +246,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean enableAccount(long accountId) {
+    public boolean enableAccount(long accountId, Date modifiedDate) {
         // TODO Auto-generated method stub
         return false;
     }

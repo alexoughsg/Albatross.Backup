@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.account;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -64,6 +65,11 @@ public class UpdateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map details;
 
+    @Parameter(name = ApiConstants.MODIFIED,
+            type = CommandType.DATE,
+            description = "Last modified date time")
+    private Date modified;
+
     @Inject
     RegionService _regionService;
 
@@ -100,6 +106,8 @@ public class UpdateAccountCmd extends BaseCmd {
         Map params = (Map)(paramsCollection.toArray())[0];
         return params;
     }
+
+    public Date getModified() { return modified; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

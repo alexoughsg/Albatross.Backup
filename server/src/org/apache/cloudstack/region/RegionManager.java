@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.region;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -101,7 +102,7 @@ public interface RegionManager {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    Account disableAccount(String accountName, Long domainId, Long id, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException;
+    Account disableAccount(String accountName, Long domainId, Long id, Boolean lockRequested, Date modified) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * Enables an account by accountId
@@ -113,7 +114,7 @@ public interface RegionManager {
      * @param accountId
      * @return account object
      */
-    Account enableAccount(String accountName, Long domainId, Long accountId);
+    Account enableAccount(String accountName, Long domainId, Long accountId, Date modified);
 
     /**
      * Deletes user by Id
@@ -154,7 +155,7 @@ public interface RegionManager {
      *            - the userId
      * @return UserAccount object
      */
-    UserAccount disableUser(Long id);
+    UserAccount disableUser(Long id, Date modified);
 
     /**
      * Enables a user
@@ -163,5 +164,5 @@ public interface RegionManager {
      *            - the userId
      * @return UserAccount object
      */
-    UserAccount enableUser(long userId);
+    UserAccount enableUser(long userId, Date modified);
 }

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.network.contrail.management;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -186,7 +187,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount lockUser(long arg0) {
+    public UserAccount lockUser(long arg0, Date arg1) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -260,37 +261,37 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public boolean disableAccount(long arg0) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean disableAccount(long arg0, Date arg1) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Account disableAccount(String arg0, Long arg1, Long arg2) throws ConcurrentOperationException, ResourceUnavailableException {
+    public Account disableAccount(String arg0, Long arg1, Long arg2, Date arg3) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount disableUser(long arg0) {
+    public UserAccount disableUser(long arg0, Date arg1) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean enableAccount(long arg0) {
+    public boolean enableAccount(long arg0, Date arg1) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Account enableAccount(String arg0, Long arg1, Long arg2) {
+    public Account enableAccount(String arg0, Long arg1, Long arg2, Date arg3) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount enableUser(long arg0) {
+    public UserAccount enableUser(long arg0, Date arg1) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -302,7 +303,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Account lockAccount(String arg0, Long arg1, Long arg2) {
+    public Account lockAccount(String arg0, Long arg1, Long arg2, Date arg3) {
         // TODO Auto-generated method stub
         return null;
     }

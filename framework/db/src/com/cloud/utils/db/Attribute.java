@@ -50,6 +50,7 @@ public class Attribute {
         AutoGV(0x4000),
         Created(0x10000),
         Removed(0x20000),
+        Modified(0x30000),
         DC(0x40000),
         CharDT(0x100000),
         StringDT(0x200000),

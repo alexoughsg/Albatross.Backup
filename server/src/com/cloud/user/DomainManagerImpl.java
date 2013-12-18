@@ -20,10 +20,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Date;
+import java.util.TimeZone;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -571,6 +574,11 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         final String domainName = cmd.getDomainName();
         final String networkDomain = cmd.getNetworkDomain();
 
+        Date modifiedDate = cmd.getModified();
+        TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
+        if (modifiedDate == null)   modifiedDate = DateUtil.parseDateString(s_gmtTimeZone, DateUtil.getDateDisplayString(s_gmtTimeZone, new Date()));
+        final Date modified = modifiedDate;
+
         // check if domain exists in the system
         final DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
@@ -581,6 +589,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             // check if domain is ROOT domain - and deny to edit it with the new name
             throw new InvalidParameterValueException("ROOT domain can not be edited with a new name");
         }
+
+        final String currentDomainName = domain.getName();
 
         // check permissions
         Account caller = CallContext.current().getCallingAccount();
@@ -619,6 +629,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     updateDomainChildren(domain, updatedDomainPath);
                     domain.setName(domainName);
                     domain.setPath(updatedDomainPath);
+                    domain.setModified(modified);
                 }
 
                 if (networkDomain != null) {
@@ -628,8 +639,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                         domain.setNetworkDomain(networkDomain);
                     }
                 }
+
                 _domainDao.update(domainId, domain);
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+                CallContext.current().putContextParameter(domain.getUuid(), currentDomainName);
             }
         });
 

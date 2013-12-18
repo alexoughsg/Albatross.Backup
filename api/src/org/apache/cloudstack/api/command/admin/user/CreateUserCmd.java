@@ -149,7 +149,7 @@ public class CreateUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("UserName: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
+        CallContext.current().setEventDetails("User Name: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
         User user =
             _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(),
                 getUserUUID());
